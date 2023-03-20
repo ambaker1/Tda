@@ -1,0 +1,17 @@
+working/
+desktop.ini
+doc/**
+!doc/Tda.pdf
+!doc/Tda.tex
+!doc/chapters/
+!doc/chapters/*.tex
+!doc/figures/
+!doc/figures/*.pdf
+!doc/figures/*.png
+!doc/tables/
+!doc/tables/*.tex
+!doc/references/
+!doc/references/*.bib
+!doc/references/*.tex
+!doc/template/
+!doc/template/*.tex
