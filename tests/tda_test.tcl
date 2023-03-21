@@ -1,4 +1,4 @@
-source test.tcl
+source include.tcl
 
 # Export data to file (creates or overwrites the file)
 putsFile example.txt "hello world"
@@ -120,3 +120,5 @@ $table destroy
 set table [csv2tbl $utf8]
 assert [txt2csv [mat2txt [tbl2mat $table]]] eq $utf8
 $table destroy
+
+

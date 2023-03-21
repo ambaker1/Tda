@@ -1,4 +1,4 @@
-source test.tcl
+source include.tcl
 
 namespace path ::tcl::mathfunc; # Makes all tcl math functions available as commands.
 assert [vmap abs {-1 2 -3}] eq {1 2 3}

@@ -1559,11 +1559,5 @@ oo::class create ::tda::table::table {
     }
 }
 
-# Load into parent namespace
-namespace eval ::tda {
-    namespace import -force table::*
-    namespace export *
-}
-
 # Finally, provide the package
 package provide tda::table 0.1.0

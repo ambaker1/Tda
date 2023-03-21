@@ -1,7 +1,6 @@
-# io.tcl
+# tda.tcl
 ################################################################################
-# File import and export.
-# Datatype conversions.
+# Tcl Data Analysis
 
 # Copyright (C) 2023 Alex Baker, ambaker1@mtu.edu
 # All rights reserved. 
@@ -10,11 +9,12 @@
 # redistribution, and for a DISCLAIMER OF ALL WARRANTIES.
 ################################################################################
 
-package require tda::table 0.1
 package require wob 0.1
+package require tda::table 0.1
+package require tda::ndlist 0.1
 
 # Define namespace
-namespace eval ::tda::io {
+namespace eval ::tda {
     # Exported commands
     # General data import and export
     namespace export readFile; # Read a file
@@ -27,7 +27,8 @@ namespace eval ::tda::io {
     namespace export writeMatrix; # Write a matrix to file
     namespace export readTable; # Read a file to table
     namespace export writeTable; # Write a table to file
-    namespace export viewMatrix viewTable; # Open up widget for viewing/copying
+    namespace export viewMatrix; # Open up widget to view matrix
+    namespace export viewTable; # Open up widget to view table
     
     # Data conversion utilities
     namespace export txt2mat mat2txt; # Space-delimited <-> Matrix
@@ -36,6 +37,11 @@ namespace eval ::tda::io {
     namespace export txt2csv csv2txt; # Space-delimited <-> CSV
     namespace export csv2tbl tbl2csv; # CSV <-> Table
     namespace export tbl2txt txt2tbl; # Table <-> Space-delimited
+    
+    # Add commands from sub-packages
+    namespace import table::* ndlist::*
+    namespace export {*}[namespace eval table {namespace export}]
+    namespace export {*}[namespace eval ndlist {namespace export}]
 }
 
 # Data import and export functions
@@ -59,7 +65,7 @@ namespace eval ::tda::io {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from
 
-proc ::tda::io::readFile {args} {
+proc ::tda::readFile {args} {
     # Check arity
     if {[llength $args] == 0} {
         return -code error "wrong # args: should be \"readFile\
@@ -99,7 +105,7 @@ proc ::tda::io::readFile {args} {
 # filename:         File to write to
 # data:             Data to write
 
-proc ::tda::io::putsFile {filename data} {
+proc ::tda::putsFile {filename data} {
     WriteToFile $filename $data w 0
 }
 
@@ -113,7 +119,7 @@ proc ::tda::io::putsFile {filename data} {
 # filename:             File to write to
 # data:                 Data to write to file
 
-proc ::tda::io::writeFile {args} {
+proc ::tda::writeFile {args} {
     # Check arity
     if {[llength $args] < 2} {
         return -code error "wrong # args: should be \"writeFile\
@@ -145,7 +151,7 @@ proc ::tda::io::writeFile {args} {
 # filename:             File to write to
 # data:                 Data to write to file
 
-proc ::tda::io::appendFile {args} {
+proc ::tda::appendFile {args} {
     # Check arity
     if {[llength $args] < 2} {
         return -code error "wrong # args: should be \"appendFile\
@@ -179,7 +185,7 @@ proc ::tda::io::appendFile {args} {
 # nonewline:    True or false, whether to include -nonewline flag
 # args:         fconfigure settings
 
-proc ::tda::io::WriteToFile {filename data access nonewline args} {
+proc ::tda::WriteToFile {filename data access nonewline args} {
     file mkdir [file dirname $filename]
     set fid [open $filename $access]
     fconfigure $fid {*}$args
@@ -204,7 +210,7 @@ proc ::tda::io::WriteToFile {filename data access nonewline args} {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from. If ".csv", converts from CSV
 
-proc ::tda::io::readMatrix {args} {
+proc ::tda::readMatrix {args} {
     set filename [lindex $args end]
     if {[file extension $filename] eq ".csv"} {
         csv2mat [readFile {*}$args]
@@ -223,7 +229,7 @@ proc ::tda::io::readMatrix {args} {
 # filename:             File to write to. If ".csv", writes to CSV
 # matrix:               Matrix to write to file
 
-proc ::tda::io::writeMatrix {args} {
+proc ::tda::writeMatrix {args} {
     set filename [lindex $args end-1]
     if {[file extension $filename] eq ".csv"} {
         writeFile {*}[lrange $args 0 end-1] [mat2csv [lindex $args end]]
@@ -241,7 +247,7 @@ proc ::tda::io::writeMatrix {args} {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from. If ".csv", converts from CSV
 
-proc ::tda::io::readTable {args} {
+proc ::tda::readTable {args} {
     set filename [lindex $args end]
     if {[file extension $filename] eq ".csv"} {
         csv2tbl [readFile {*}$args]
@@ -260,7 +266,7 @@ proc ::tda::io::readTable {args} {
 # filename:             File to write to. If ".csv", writes to CSV
 # table:                Table to write to file
 
-proc ::tda::io::writeTable {args} {
+proc ::tda::writeTable {args} {
     set filename [lindex $args end-1]
     if {[file extension $filename] eq ".csv"} {
         writeFile {*}[lrange $args 0 end-1] [tbl2csv [lindex $args end]]
@@ -280,12 +286,12 @@ proc ::tda::io::writeTable {args} {
 # table:        Table to view
 # title:        Title of widget (default "Table")
 
-proc ::tda::io::viewTable {table {title Table}} {
+proc ::tda::viewTable {table {title Table}} {
     # Create widget for viewing table
     set widget [::wob::widget new $table]
     $widget eval {package require Tktable}
     $widget alias GetValue $table index2
-    $widget alias CopyCSV ::tda::io::mat2csv
+    $widget alias CopyCSV ::tda::mat2csv
     $widget set n [$table height]
     $widget set m [$table width]
     $widget eval {
@@ -335,8 +341,8 @@ proc ::tda::io::viewTable {table {title Table}} {
 # fieldRow:     Use first row as fields. Default false
 # keyColumn:    Use first column as keys. Default false
 
-proc ::tda::io::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
-    viewTable [::tda::io::mat2tbl $matrix $fieldRow $keyColumn] $title
+proc ::tda::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
+    viewTable [::tda::mat2tbl $matrix $fieldRow $keyColumn] $title
 }
 
 # Data Conversion
@@ -358,7 +364,7 @@ proc ::tda::io::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
 # hRows:        Number of header rows
 # hCols:        Number of header columns
 
-proc ::tda::io::TrimMatrix {matrix hRows hCols} {
+proc ::tda::TrimMatrix {matrix hRows hCols} {
     if {$hRows > 0} {
         set matrix [lrange $matrix $hRows end]
     }
@@ -380,7 +386,7 @@ proc ::tda::io::TrimMatrix {matrix hRows hCols} {
 # hRows:    Number of header rows to truncate. Default 0
 # hCols:    Number of header columns to truncate. Default 0
 
-proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
+proc ::tda::txt2mat {text {hRows 0} {hCols 0}} {
     set matrix ""
     set row ""
     foreach line [split $text \n] {
@@ -406,7 +412,7 @@ proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::io::mat2txt {matrix {hRows 0} {hCols 0}} {
+proc ::tda::mat2txt {matrix {hRows 0} {hCols 0}} {
     return [join [TrimMatrix $matrix $hRows $hCols] \n]
 }
 
@@ -421,7 +427,7 @@ proc ::tda::io::mat2txt {matrix {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
+proc ::tda::csv2mat {csv {hRows 0} {hCols 0}} {
     # Initialize variables
     set matrix ""; # Output matrix
     set csvRow ""; # CSV-formatted row of data
@@ -483,7 +489,7 @@ proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
+proc ::tda::mat2csv {matrix {hRows 0} {hCols 0}} {
     set csvTable ""
     # Loop through matrix rows
     foreach row [TrimMatrix $matrix $hRows $hCols] {
@@ -510,7 +516,7 @@ proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
 # fieldRow:     Include fields as first row in matrix. Default true
 # keyColumn:    Include keys as first column in matrix. Default true
 
-proc ::tda::io::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
     # Get values (blanks for missing data)
     set keys [uplevel 1 $table keys]
     set fields [uplevel 1 $table fields]
@@ -538,9 +544,9 @@ proc ::tda::io::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
 # fieldRow:     Use first row as fields. Default true
 # keyColumn:    Use first column as keys. Default true
 
-proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
+proc ::tda::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
     # Create blank table
-    set table [::tda::table::table new]
+    set table [table new]
 
     # Trim matrix and get keys/fields
     if {$fieldRow} {
@@ -590,30 +596,24 @@ proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
 }
 
 # Derived conversions 
-proc ::tda::io::tbl2csv {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::tbl2csv {table {fieldRow 1} {keyColumn 1}} {
     mat2csv [tbl2mat $table $fieldRow $keyColumn]
 }
-proc ::tda::io::csv2tbl {csv {fieldRow 1} {keyColumn 1}} {
+proc ::tda::csv2tbl {csv {fieldRow 1} {keyColumn 1}} {
     mat2tbl [csv2mat $csv] $fieldRow $keyColumn
 }
-proc ::tda::io::tbl2txt {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::tbl2txt {table {fieldRow 1} {keyColumn 1}} {
     mat2txt [tbl2mat $table $fieldRow $keyColumn]
 }
-proc ::tda::io::txt2tbl {txt {fieldRow 1} {keyColumn 1}} {
+proc ::tda::txt2tbl {txt {fieldRow 1} {keyColumn 1}} {
     mat2tbl [txt2mat $txt] $fieldRow $keyColumn
 }
-proc ::tda::io::txt2csv {txt {hRows 0} {hCols 0}} {
+proc ::tda::txt2csv {txt {hRows 0} {hCols 0}} {
     mat2csv [txt2mat $txt $hRows $hCols]
 }
-proc ::tda::io::csv2txt {csv {hRows 0} {hCols 0}} {
+proc ::tda::csv2txt {csv {hRows 0} {hCols 0}} {
     mat2txt [csv2mat $csv $hRows $hCols]
 }
 
-# Load into parent namespace
-namespace eval ::tda {
-    namespace import -force io::*
-    namespace export *
-}
-
 # Finally, provide the package
-package provide tda::io 0.1.0
+package provide tda 0.1.0

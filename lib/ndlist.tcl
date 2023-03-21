@@ -2095,11 +2095,5 @@ proc ::tda::ndlist::ElementWiseOp {list1 op list2} {
     }
 }
 
-# Load into parent namespace
-namespace eval ::tda {
-    namespace import -force ndlist::*
-    namespace export *
-}
-
 # Finally, provide the package
 package provide tda::ndlist 0.1.0

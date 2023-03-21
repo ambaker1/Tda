@@ -1,4 +1,4 @@
-source test.tcl
+source include.tcl
 
 # Table module
 tie tableObj [table new]
