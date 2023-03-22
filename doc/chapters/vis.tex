@@ -1,5 +1,5 @@
 \cleartooddpage[\thispagestyle{empty}]
-\chapter{Data Visualization Module}
+\chapter{Data Visualization}\label{vis}
 \moduleinfo{vis}
 The ``vis'' module provides utilities for viewing data in Tcl. It utilizes the ``wob'' package for managing Tk widgets, so in order to interact with the widgets, one must enter the Tcl/Tk event loop. The \textit{mainLoop} command in the ``wob'' package is an easy way to accomplish this.
 
@@ -40,7 +40,7 @@ wob::mainLoop
 \label{fig:viewdata}
 \end{figure}
 
-
+\clearpage
 \section{Plot XY data}
 XY data can be explored graphically with the command \cmdlink{plotXY}. Use the arrow keys or slider to move through the data, and use the scroll wheel on the mouse to switch between data series.
 This widget was inspired from ``plotpoints'' on the Tcl wiki: \url{https://wiki.tcl-lang.org/page/A+little+function+plotter}.

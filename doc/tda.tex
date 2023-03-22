@@ -1,10 +1,10 @@
-\documentclass{report}
+\documentclass[twoside]{report}
 
 % Input packages & formatting
 \input{template/packages}
 \input{template/formatting}
 \input{template/version}
-\renewcommand{\cleartooddpage}[1][]{\ignorespaces} % single side
+% \renewcommand{\cleartooddpage}[1][]{\ignorespaces} % single side
 \newcommand{\caret}{$^\wedge$}
 
 % Other macros
@@ -23,9 +23,6 @@
 
 \begin{document}
     \maketitle
-    \begin{abstract}
-    Tda (pronounced "tada") provides data analysis tools for use in Tcl scripts. It adds native n-dimensional arrays, a tabular datatype, file import/export and datatype conversion utilities, and data visualization tools to Tcl. Tda was originally developed for OpenSees users, but can be used in any Tcl application.
-    \end{abstract}
     \fancypagestyle{plain}[foreword]{}
     \pagestyle{plain}
     \cleartooddpage[\thispagestyle{empty}]
@@ -37,7 +34,6 @@
     \pagestyle{main}
     \pagenumbering{arabic}
     \include{chapters/intro}
-    % Modules - alphabetic order
     \include{chapters/ndlist}
     \include{chapters/tbl}
     \include{chapters/io}

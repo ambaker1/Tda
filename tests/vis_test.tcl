@@ -16,5 +16,4 @@ $tableObj define data {
 }
 viewTable $tableObj
 viewMatrix [$tableObj values]
-plotXY [$tableObj values]
-mainLoop break
+wob::mainLoop
