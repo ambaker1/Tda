@@ -1,6 +1,6 @@
-# tda.tcl
+# io.tcl
 ################################################################################
-# Tcl Data Analysis
+# File import and export, and datatype conversions
 
 # Copyright (C) 2023 Alex Baker, ambaker1@mtu.edu
 # All rights reserved. 
@@ -9,12 +9,10 @@
 # redistribution, and for a DISCLAIMER OF ALL WARRANTIES.
 ################################################################################
 
-package require wob 0.1
-package require tda::table 0.1
-package require tda::ndlist 0.1
+package require tda::tbl 0.1
 
 # Define namespace
-namespace eval ::tda {
+namespace eval ::tda::io {
     # Exported commands
     # General data import and export
     namespace export readFile; # Read a file
@@ -27,8 +25,6 @@ namespace eval ::tda {
     namespace export writeMatrix; # Write a matrix to file
     namespace export readTable; # Read a file to table
     namespace export writeTable; # Write a table to file
-    namespace export viewMatrix; # Open up widget to view matrix
-    namespace export viewTable; # Open up widget to view table
     
     # Data conversion utilities
     namespace export txt2mat mat2txt; # Space-delimited <-> Matrix
@@ -37,11 +33,6 @@ namespace eval ::tda {
     namespace export txt2csv csv2txt; # Space-delimited <-> CSV
     namespace export csv2tbl tbl2csv; # CSV <-> Table
     namespace export tbl2txt txt2tbl; # Table <-> Space-delimited
-    
-    # Add commands from sub-packages
-    namespace import table::* ndlist::*
-    namespace export {*}[namespace eval table {namespace export}]
-    namespace export {*}[namespace eval ndlist {namespace export}]
 }
 
 # Data import and export functions
@@ -65,7 +56,7 @@ namespace eval ::tda {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from
 
-proc ::tda::readFile {args} {
+proc ::tda::io::readFile {args} {
     # Check arity
     if {[llength $args] == 0} {
         return -code error "wrong # args: should be \"readFile\
@@ -105,7 +96,7 @@ proc ::tda::readFile {args} {
 # filename:         File to write to
 # data:             Data to write
 
-proc ::tda::putsFile {filename data} {
+proc ::tda::io::putsFile {filename data} {
     WriteToFile $filename $data w 0
 }
 
@@ -119,7 +110,7 @@ proc ::tda::putsFile {filename data} {
 # filename:             File to write to
 # data:                 Data to write to file
 
-proc ::tda::writeFile {args} {
+proc ::tda::io::writeFile {args} {
     # Check arity
     if {[llength $args] < 2} {
         return -code error "wrong # args: should be \"writeFile\
@@ -151,7 +142,7 @@ proc ::tda::writeFile {args} {
 # filename:             File to write to
 # data:                 Data to write to file
 
-proc ::tda::appendFile {args} {
+proc ::tda::io::appendFile {args} {
     # Check arity
     if {[llength $args] < 2} {
         return -code error "wrong # args: should be \"appendFile\
@@ -185,7 +176,7 @@ proc ::tda::appendFile {args} {
 # nonewline:    True or false, whether to include -nonewline flag
 # args:         fconfigure settings
 
-proc ::tda::WriteToFile {filename data access nonewline args} {
+proc ::tda::io::WriteToFile {filename data access nonewline args} {
     file mkdir [file dirname $filename]
     set fid [open $filename $access]
     fconfigure $fid {*}$args
@@ -210,7 +201,7 @@ proc ::tda::WriteToFile {filename data access nonewline args} {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from. If ".csv", converts from CSV
 
-proc ::tda::readMatrix {args} {
+proc ::tda::io::readMatrix {args} {
     set filename [lindex $args end]
     if {[file extension $filename] eq ".csv"} {
         csv2mat [readFile {*}$args]
@@ -229,7 +220,7 @@ proc ::tda::readMatrix {args} {
 # filename:             File to write to. If ".csv", writes to CSV
 # matrix:               Matrix to write to file
 
-proc ::tda::writeMatrix {args} {
+proc ::tda::io::writeMatrix {args} {
     set filename [lindex $args end-1]
     if {[file extension $filename] eq ".csv"} {
         writeFile {*}[lrange $args 0 end-1] [mat2csv [lindex $args end]]
@@ -247,7 +238,7 @@ proc ::tda::writeMatrix {args} {
 # -newline:         Read the last newline (default ignores last newline)
 # filename:         File to read from. If ".csv", converts from CSV
 
-proc ::tda::readTable {args} {
+proc ::tda::io::readTable {args} {
     set filename [lindex $args end]
     if {[file extension $filename] eq ".csv"} {
         csv2tbl [readFile {*}$args]
@@ -266,83 +257,13 @@ proc ::tda::readTable {args} {
 # filename:             File to write to. If ".csv", writes to CSV
 # table:                Table to write to file
 
-proc ::tda::writeTable {args} {
+proc ::tda::io::writeTable {args} {
     set filename [lindex $args end-1]
     if {[file extension $filename] eq ".csv"} {
         writeFile {*}[lrange $args 0 end-1] [tbl2csv [lindex $args end]]
     } else {
         writeFile {*}[lrange $args 0 end-1] [tbl2txt [lindex $args end]]
     }
-}
-
-# Data viewing
-################################################################################
-
-# viewTable --
-# 
-# Open a wob widget for viewing a table contents. Copies to CSV format.
-#
-# Arguments:
-# table:        Table to view
-# title:        Title of widget (default "Table")
-
-proc ::tda::viewTable {table {title Table}} {
-    # Create widget for viewing table
-    set widget [::wob::widget new $table]
-    $widget eval {package require Tktable}
-    $widget alias GetValue $table index2
-    $widget alias CopyCSV ::tda::mat2csv
-    $widget set n [$table height]
-    $widget set m [$table width]
-    $widget eval {
-        # Modify the clipboard function to copy correctly from table
-        trace add execution clipboard leave TrimClipBoard
-        proc TrimClipBoard {cmdString args} {
-            if {[lindex $cmdString 1] eq "append"} {
-                set clipboard [clipboard get]
-                clipboard clear
-                clipboard append [CopyCSV $clipboard] 
-            }
-        }
-    
-        # Create frame, scroll bar, and button
-        frame .f -bd 2 -relief groove
-        scrollbar .f.sbar -command {.f.tbl yview}
-        
-        # Create table
-        table .f.tbl -rows [expr {$n + 1}] -cols [expr {$m + 1}] \
-                -titlerows 1 -titlecols 1 -height 20 -width 10 \
-                -yscrollcommand {.f.sbar set} -invertselected 1 \
-                -command {GetValue %r %c} -state disabled -wrap 1 \
-                -rowstretchmode unset -colstretchmode all \
-                -selecttitle 1 -selectmode extended
-        .f.tbl tag configure active -fg black
-        .f.tbl height 0 1; # Height of title row 
-
-        # Arrange widget
-        grid .f -column 0 -row 0 -columnspan 2 -rowspan 1 -sticky nsew
-        grid .f.tbl -column 0 -row 1 -columnspan 1 -rowspan 1 -sticky nsew
-        grid .f.sbar -column 1 -row 1 -columnspan 1 -rowspan 1 -sticky ns
-        grid columnconfigure . all -weight 1
-        grid rowconfigure . all -weight 1
-        grid columnconfigure .f .f.tbl -weight 1
-        grid rowconfigure .f .f.tbl -weight 1
-        vwait forever; # Wait for user to close window
-    }
-}
-
-# viewMatrix --
-#
-# Open a wob widget to view a matrix contents. Uses "viewTable".
-# 
-# Arguments:
-# matrix:       Matrix to view
-# title:        Title of widget (default "Matrix")
-# fieldRow:     Use first row as fields. Default false
-# keyColumn:    Use first column as keys. Default false
-
-proc ::tda::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
-    viewTable [::tda::mat2tbl $matrix $fieldRow $keyColumn] $title
 }
 
 # Data Conversion
@@ -364,7 +285,7 @@ proc ::tda::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
 # hRows:        Number of header rows
 # hCols:        Number of header columns
 
-proc ::tda::TrimMatrix {matrix hRows hCols} {
+proc ::tda::io::TrimMatrix {matrix hRows hCols} {
     if {$hRows > 0} {
         set matrix [lrange $matrix $hRows end]
     }
@@ -386,7 +307,7 @@ proc ::tda::TrimMatrix {matrix hRows hCols} {
 # hRows:    Number of header rows to truncate. Default 0
 # hCols:    Number of header columns to truncate. Default 0
 
-proc ::tda::txt2mat {text {hRows 0} {hCols 0}} {
+proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
     set matrix ""
     set row ""
     foreach line [split $text \n] {
@@ -412,7 +333,7 @@ proc ::tda::txt2mat {text {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::mat2txt {matrix {hRows 0} {hCols 0}} {
+proc ::tda::io::mat2txt {matrix {hRows 0} {hCols 0}} {
     return [join [TrimMatrix $matrix $hRows $hCols] \n]
 }
 
@@ -427,7 +348,7 @@ proc ::tda::mat2txt {matrix {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::csv2mat {csv {hRows 0} {hCols 0}} {
+proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
     # Initialize variables
     set matrix ""; # Output matrix
     set csvRow ""; # CSV-formatted row of data
@@ -489,7 +410,7 @@ proc ::tda::csv2mat {csv {hRows 0} {hCols 0}} {
 # hRows:        Number of header rows to truncate. Default 0
 # hCols:        Number of header columns to truncate. Default 0
 
-proc ::tda::mat2csv {matrix {hRows 0} {hCols 0}} {
+proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
     set csvTable ""
     # Loop through matrix rows
     foreach row [TrimMatrix $matrix $hRows $hCols] {
@@ -516,7 +437,7 @@ proc ::tda::mat2csv {matrix {hRows 0} {hCols 0}} {
 # fieldRow:     Include fields as first row in matrix. Default true
 # keyColumn:    Include keys as first column in matrix. Default true
 
-proc ::tda::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
     # Get values (blanks for missing data)
     set keys [uplevel 1 $table keys]
     set fields [uplevel 1 $table fields]
@@ -544,9 +465,9 @@ proc ::tda::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
 # fieldRow:     Use first row as fields. Default true
 # keyColumn:    Use first column as keys. Default true
 
-proc ::tda::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
     # Create blank table
-    set table [table new]
+    set table [::tda::tbl::tdatbl new]
 
     # Trim matrix and get keys/fields
     if {$fieldRow} {
@@ -596,24 +517,24 @@ proc ::tda::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
 }
 
 # Derived conversions 
-proc ::tda::tbl2csv {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::tbl2csv {table {fieldRow 1} {keyColumn 1}} {
     mat2csv [tbl2mat $table $fieldRow $keyColumn]
 }
-proc ::tda::csv2tbl {csv {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::csv2tbl {csv {fieldRow 1} {keyColumn 1}} {
     mat2tbl [csv2mat $csv] $fieldRow $keyColumn
 }
-proc ::tda::tbl2txt {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::tbl2txt {table {fieldRow 1} {keyColumn 1}} {
     mat2txt [tbl2mat $table $fieldRow $keyColumn]
 }
-proc ::tda::txt2tbl {txt {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::txt2tbl {txt {fieldRow 1} {keyColumn 1}} {
     mat2tbl [txt2mat $txt] $fieldRow $keyColumn
 }
-proc ::tda::txt2csv {txt {hRows 0} {hCols 0}} {
+proc ::tda::io::txt2csv {txt {hRows 0} {hCols 0}} {
     mat2csv [txt2mat $txt $hRows $hCols]
 }
-proc ::tda::csv2txt {csv {hRows 0} {hCols 0}} {
+proc ::tda::io::csv2txt {csv {hRows 0} {hCols 0}} {
     mat2txt [csv2mat $csv $hRows $hCols]
 }
 
 # Finally, provide the package
-package provide tda 0.1.0
+package provide tda::io 0.1.0

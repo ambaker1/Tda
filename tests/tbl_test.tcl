@@ -1,7 +1,7 @@
 source include.tcl
 
 # Table module
-tie tableObj [table new]
+tie tableObj [tdatbl new]
 $tableObj define data {
     1 {x 3.44 y 7.11 z 8.67}
     2 {x 4.61 y 1.81 z 7.63}
@@ -61,13 +61,13 @@ $tableCopy search -inline -real x 8.25
 assert [$tableCopy keys] == 3; # returns first matching key
 
 # Merging
-tie newTable [table new data {1 {x 5.00 q 6.34}}]
+tie newTable [tdatbl new data {1 {x 5.00 q 6.34}}]
 tie tableCopy [$tableObj copy]
 # $newTable set 1 x 5.00 q 6.34
 $tableCopy merge $newTable
 $newTable destroy; # clean up
 assert [$tableCopy properties] eq {keyname key fieldname field keys {1 2 3 4 5} fields {x y z q} data {1 {x 5.00 y 7.11 z 8.67 q 6.34} 2 {x 4.61 y 1.81 z 7.63} 3 {x 8.25 y 7.56 z 3.84} 4 {x 5.20 y 6.78 z 1.11} 5 {x 3.26 y 9.92 z 4.56}}}
 
-tie table1 [table new keys {1 2 3}]
-tie table2 [table new {keys {1 2 3}}]
+tie table1 [tdatbl new keys {1 2 3}]
+tie table2 [tdatbl new {keys {1 2 3}}]
 assert [$table1] eq [$table2]

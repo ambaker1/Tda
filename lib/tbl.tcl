@@ -1,4 +1,4 @@
-# table.tcl
+# tbl.tcl
 ################################################################################
 # Constant-time tabular data format, using TclOO and Tcl dictionaries.
 
@@ -10,14 +10,14 @@
 ################################################################################
 
 # Define namespace
-namespace eval ::tda::table {
+namespace eval ::tda::tbl {
     # Table object class
-    namespace export table
+    namespace export tdatbl
 }
 
 # IsUnique --
 # Check if a list is unique
-proc ::tda::table::IsUnique {list} {
+proc ::tda::tbl::IsUnique {list} {
     set map ""
     foreach item $list {
         if {[dict exists $map $item]} {
@@ -30,16 +30,16 @@ proc ::tda::table::IsUnique {list} {
 
 # NormalizeIndex --
 # Normalize an end-integer style index
-proc ::tda::table::NormalizeIndex {n index} {
+proc ::tda::tbl::NormalizeIndex {n index} {
     expr [string map [list end [expr {$n - 1}]] $index]
 }
 
 # Definition of the table class and its methods:
-oo::class create ::tda::table::table {
+oo::class create ::tda::tbl::tdatbl {
     # Variables used in all methods
     variable keys keymap keyname fields fieldmap fieldname data
     
-    # Constructor - called by "table new" and "table create"
+    # Constructor - called by "tbl new" and "tbl create"
     constructor {args} {
         # Initialize table variables
         set keys ""; # Ordered list of keys
@@ -105,7 +105,7 @@ oo::class create ::tda::table::table {
                 }
                 keys {
                     # Ensure no duplicates
-                    if {![::tda::table::IsUnique $value]} {
+                    if {![::tda::tbl::IsUnique $value]} {
                         return -code error "Cannot have duplicate keys"
                     }
                     # Redefine keys and keymap
@@ -132,7 +132,7 @@ oo::class create ::tda::table::table {
                 }
                 fields {
                     # Ensure no duplicates
-                    if {![::tda::table::IsUnique $value]} {
+                    if {![::tda::tbl::IsUnique $value]} {
                         return -code error "Cannot have duplicate fields"
                     }
                     # Redefine fields and fieldmap
@@ -351,7 +351,7 @@ oo::class create ::tda::table::table {
     # rid/cid:          Row/column ID (can use end-integer format)
     
     method key {rid} {
-        set rid [::tda::table::NormalizeIndex [llength $keys] $rid]
+        set rid [::tda::tbl::NormalizeIndex [llength $keys] $rid]
         if {$rid < 0 || $rid >= [llength $keys]} {
             return -code error "Row ID out of range"
         }
@@ -359,7 +359,7 @@ oo::class create ::tda::table::table {
     }
     
     method field {cid} {
-        set cid [::tda::table::NormalizeIndex [llength $fields] $cid]
+        set cid [::tda::tbl::NormalizeIndex [llength $fields] $cid]
         if {$cid < 0 || $cid >= [llength $fields]} {
             return -code error "Column ID out of range"
         }
@@ -1219,7 +1219,7 @@ oo::class create ::tda::table::table {
         switch $option {
             keys {
                 # Ensure input keys are unique and new
-                if {![::tda::table::IsUnique $args]} {
+                if {![::tda::tbl::IsUnique $args]} {
                     return -code error "Cannot have duplicate key inputs"
                 }
                 foreach key $args {
@@ -1228,7 +1228,7 @@ oo::class create ::tda::table::table {
                     }
                 }
                 # Convert index input to integer, and check
-                set rid [::tda::table::NormalizeIndex [llength $keys] $index]
+                set rid [::tda::tbl::NormalizeIndex [llength $keys] $index]
                 if {$rid < 0 || $rid > [llength $keys]} {
                     return -code error "Row ID out of range"
                 }
@@ -1248,7 +1248,7 @@ oo::class create ::tda::table::table {
             }
             fields {
                 # Ensure input fields are unique and new
-                if {![::tda::table::IsUnique $args]} {
+                if {![::tda::tbl::IsUnique $args]} {
                     return -code error "Cannot have duplicate field inputs"
                 }
                 foreach field $args {
@@ -1257,7 +1257,7 @@ oo::class create ::tda::table::table {
                     }
                 }
                 # Convert index input to integer, and check
-                set cid [::tda::table::NormalizeIndex [llength $fields] $index]
+                set cid [::tda::tbl::NormalizeIndex [llength $fields] $index]
                 if {$cid < 0 || $cid > [llength $fields]} {
                     return -code error "Column ID out of range"
                 }
@@ -1289,7 +1289,7 @@ oo::class create ::tda::table::table {
         if {[llength $old] != [llength $new]} {
             return -code error "Old and new must match in length"
         }
-        if {![::tda::table::IsUnique $old] || ![::tda::table::IsUnique $new]} {
+        if {![::tda::tbl::IsUnique $old] || ![::tda::tbl::IsUnique $new]} {
             return -code error "Old and new must be unique"
         }
         switch $option {
@@ -1398,7 +1398,7 @@ oo::class create ::tda::table::table {
         }
         set i [dict get $keymap $key]
         # Convert target index input to integer, and check
-        set j [::tda::table::NormalizeIndex [llength $keys] $index]
+        set j [::tda::tbl::NormalizeIndex [llength $keys] $index]
         if {$j < 0 || $j >= [llength $keys]} {
             return -code error "Target row ID out of range"
         }
@@ -1432,7 +1432,7 @@ oo::class create ::tda::table::table {
         }
         set i [dict get $fieldmap $field]
         # Convert target index input to integer, and check
-        set j [::tda::table::NormalizeIndex [llength $fields] $index]
+        set j [::tda::tbl::NormalizeIndex [llength $fields] $index]
         if {$j < 0 || $j >= [llength $fields]} {
             return -code error "Target column ID out of range"
         }
@@ -1560,4 +1560,4 @@ oo::class create ::tda::table::table {
 }
 
 # Finally, provide the package
-package provide tda::table 0.1.0
+package provide tda::tbl 0.1.0
