@@ -1,10 +1,10 @@
 source include.tcl
 
-# Perform material test
 namespace path ::tcl::mathfunc
 set x [linsteps 0.01 -10 10]
-set y [vmap sin $x]
-plotXY $x $y
+set y1 [vmap sin $x]
+set y2 [vmap cos $x]
+plotXY $x $y1 $y2
 # Table module
 set tableObj [tdatbl new]
 $tableObj define data {
