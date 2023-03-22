@@ -30,9 +30,9 @@ namespace eval ::tda::vis {
 # table:        Table to view
 # title:        Title of widget (default "Table")
 
-proc ::tda::vis::viewTable {table {title Table}} {
+proc ::tda::vis::viewTable {table} {
     # Create widget for viewing table
-    set widget [::wob::widget new $table]
+    set widget [::wob::widget new "Table $table"]
     $widget eval {package require Tktable}
     $widget alias GetValue $table index2
     $widget alias CopyCSV ::tda::io::mat2csv
@@ -53,7 +53,7 @@ proc ::tda::vis::viewTable {table {title Table}} {
         frame .f -bd 2 -relief groove
         scrollbar .f.sbar -command {.f.tbl yview}
         
-        # Create table
+        # Create table (-state disabled prevents editing)
         table .f.tbl -rows [expr {$n + 1}] -cols [expr {$m + 1}] \
                 -titlerows 1 -titlecols 1 -height 20 -width 10 \
                 -yscrollcommand {.f.sbar set} -invertselected 1 \
@@ -81,12 +81,15 @@ proc ::tda::vis::viewTable {table {title Table}} {
 # 
 # Arguments:
 # matrix:       Matrix to view
-# title:        Title of widget (default "Matrix")
-# fieldRow:     Use first row as fields. Default false
-# keyColumn:    Use first column as keys. Default false
 
-proc ::tda::vis::viewMatrix {matrix {title Matrix} {fieldRow 0} {keyColumn 0}} {
-    viewTable [::tda::mat2tbl $matrix $fieldRow $keyColumn] $title
+proc ::tda::vis::viewMatrix {matrix} {
+    set table [::tda::mat2tbl $matrix 0 0]
+    $table define keyname R 
+    $table define fieldname C
+    set widget [viewTable $table]
+    $widget eval [list wm title . "Matrix"]
+    $widget eval {.f.tbl configure -selecttitle 0}
+    return $widget
 }
 
 # plotXY --
@@ -127,6 +130,7 @@ proc ::tda::vis::plotXY {args} {
 # ScatterPlot --
 #
 # Sub-class of widget for creating scatter plots
+# Inspired from https://wiki.tcl-lang.org/page/A+little+function+plotter
 
 oo::class create ::tda::vis::ScatterPlot {
     # Create a widget class
@@ -340,28 +344,22 @@ oo::class create ::tda::vis::ScatterPlot {
     # Add an X-Y series to the figure
     #
     # Arguments:
-    # X Y, or XY:   X vector and Y vector, or matrix with columns X and Y
+    # X:            Independent variable (vector)
+    # Y:            Dependent variable (vector)
     # args:         key value options. Currently just for line style.
     
-    method plot {args} {
-        # Switch for arity
-        if {[llength $args]%2 == 1} {
-            # Matrix entry
-            set options [lassign $args XY]
-            set coords [concat {*}$XY]
-        } else {
-            # Vector entry
-            set options [lassign $args X Y]
-            set coords ""
-            foreach x $X y $Y {
-                lappend coords $x $y
-            }
+    method plot {X Y args} {
+        if {[llength $X] != [llength $Y]} {
+            return -code error "Vectors must be equal length"
+        }
+        foreach x $X y $Y {
+            lappend coords $x $y
         }
         if {[llength $coords] == 0} {
             return -code error "Must supply at least one point"
         }
         my set coords $coords
-        my set options $options
+        my set options $args
         my eval {
             # Add series to lists
             incr nSeries
