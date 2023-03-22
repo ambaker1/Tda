@@ -1,0 +1,126 @@
+\chapter*{Introduction to Tda}
+\addcontentsline{toc}{chapter}{Introduction to Tda}  
+Tda version \version\ was written for OpenSees 3.3.0 and Tcl 8.6.10. 
+\clearpage
+\section{Notation}
+This manual is for Tcl-based commands, and notation used was based on the notation used in the original OpenSees documentation \cite{mazzoni_opensees_2006}. 
+In this notation style,  the prefix \texttt{\$} is used to denote an input variable, and all other words are literal strings.
+Option keywords are typically denoted with the prefix \texttt{-}, and all optional inputs are denoted by enclosing in \texttt{<>} braces.
+Finally, an arbitrary number of arguments are denoted by ``1 2 ...'' notation, (e.g. \texttt{\$arg1 \$arg2 ...}), unless if the arguments must be paired, in which case it will use a ``key value ...'' notation.
+Below is an example of the notation used for commands in this manual.
+\begin{syntax}
+command \$foo <-bar> <\$key \$value ...>
+\end{syntax}
+\begin{args}
+\$foo & Required variable input ``foo''. \\
+-bar & Optional keyword ``-bar''. \\
+\$key \$value ... & Optional paired list (arbitrary number of pairs).
+\end{args}
+\clearpage
+\section{Structure of Tda}
+Tda is organized into modules, each contained within a unique namespace and package name, prefixed with \texttt{tda}, the parent namespace/package. 
+Versioning follows semantic versioning rules, so one should expect backwards compatibility as long as major version numbers stay the same.
+\subsection{Loading Tda Modules}
+Loading the main \texttt{tda} package loads all modules listed in Table \ref{tbl:module_versions}.
+Alternatively, modules can be individually loaded by specifying the module package name.
+Note that dependencies are min-bounded within each module and for the parent package \texttt{tda}, so requiring an exact version of a package does not load the exact versions of its dependencies, but rather the most recent compatible versions.
+To load an exact version of Tda, one must load the modules separately, in order of dependence.
+\begin{syntax}
+package require tda <\$version> \\
+package require <-exact> tda::\$module <\$version>
+\end{syntax}
+\begin{args}
+-exact & Option to require an exact version (must also include \$version). \\
+\$module & Tda module to require (if just tda, loads all modules). \\
+\$version & Specify minimum version number. Default highest stable version.
+\end{args}
+
+\clearpage
+\subsection{Importing Tda Commands}
+Public procedures for each module are imported into the parent namespace \texttt{::tda}, and also added to the \texttt{::tda} namespace export list, for easy import. 
+To load all Tda commands, simply import all commands in the \texttt{::tda} export list.
+\begin{syntax}
+namespace import tda::*
+\end{syntax}
+To load a specific module, simply import all commands in the module's export list.
+\begin{syntax}
+namespace import tda::\$module::*
+\end{syntax}
+\begin{args}
+\$module & Tda module to import (if just \texttt{tda::*}, loads all modules). 
+\end{args}
+To load a specific command, simply specify the command with the \texttt{tda} prefix.
+\begin{syntax}
+namespace import tda::\$command
+\end{syntax}
+\begin{args}
+\$command & Specific command to import.
+\end{args}
+
+\begin{example}{Loading and importing Tda commands}
+\begin{lstlisting}
+package require tda
+puts [tda::range 5]
+namespace import tda::*
+puts [range 5]
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+0 1 2 3 4
+0 1 2 3 4
+\end{lstlisting}
+\end{example}
+
+\clearpage
+\subsection{Object Oriented Tcl}
+Some features in Tda follow an object-oriented paradigm, using the the built-in TclOO package.
+In those cases, a ``class'' will be provided that acts as a template for creating ``objects'', or commands that are linked to unique namespaces and have subcommands, or ``methods'' that allow for access and modification of variables in the object's namespace.
+Since the TclOO package is utilized, all Tda classes have standard methods ``new'' and ``create'', and all Tda objects have the standard method ``destroy''.
+Additionally, as TclOO is standard to Tcl, class and object introspection using the \textit{info} command can be used to dive into the structure of the class (using its fully declared name) and its objects.
+
+To demonstrate TclOO basics, see the example below of a fictitious class named ``foo''.
+\begin{example}{TclOO basics}
+\begin{lstlisting}
+# Create objects from a class named 'foo'
+set bar1 [foo new]; # Creates object with auto-generated name, storing in variable 'bar1'
+foo create bar2; # Creates object with explicit command name 'bar2'
+puts [info class instances foo]; # Display all instances of 'foo'
+$bar1 destroy; # Destroys object stored in variable 'bar1'
+bar2 destroy; # Destroys object 'bar2'
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+::oo::Obj12 ::bar2
+\end{lstlisting}
+\end{example}
+
+\cleartooddpage[\thispagestyle{empty}]
+\section{Copyright and Disclaimer}
+
+Copyright (c) 2023, Alexander Baker \\
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer.
+
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution.
+
+3. Neither the name of the copyright holder nor the names of its
+   contributors may be used to endorse or promote products derived from
+   this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
