@@ -622,31 +622,20 @@ oo::class create ::tda::tbl::tbl {
 	# Get a value from a table using numbered indices
 	# 
 	# Arguments:
-	# rid:          row index
-	# cid:          column index
+	# rid:          row index (-1 for fields)
+	# cid:          column index (-1 for keys)
     
     method index {rid cid} {
-        my get [my key $rid] [my field $cid]
-    }
-    
-    # $tblObj index2 --
-    # 
-    # Indexing, origin == 1. Zero will return keys and fields
-    # Used in method "view" to get values for display
-    
-    method index2 {i j} {
-        incr i -1
-        incr j -1
-        if {$i == -1} {
-            if {$j == -1} {
+        if {$rid == -1} {
+            if {$cid == -1} {
                 return "$keyname\\$fieldname"
             }
-            return [my field $j]
+            return [my field $cid]
         }
-        if {$j == -1} {
-            return [my key $i]
+        if {$cid == -1} {
+            return [my key $rid]
         }
-        my index $i $j
+        my get [my key $rid] [my field $cid]
     }
 
     # $tblObj rget --
