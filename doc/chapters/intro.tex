@@ -1,12 +1,87 @@
 \chapter*{Introduction to Tda}
 \addcontentsline{toc}{chapter}{Introduction to Tda}  
-OpenSees is an open-source scripting-based finite-element analysis software, specializing in earthquake engineering simulation \cite{mckenna_nonlinear_2010}. 
-One of the scripting languages for OpenSees is Tcl, or Tool Command Language, which is a high-level, general purpose procedural language \cite{ousterhout_tcl_1989}. 
-Tda (pronounced "ta-da!") was developed with the OpenSees user in mind, adding much needed data analysis and manipulation tools. 
-It adds native n-dimensional arrays, a tabular datatype, file import/export and datatype conversion utilities, and data visualization tools to Tcl, which are compartmentalized into separate sub-packages of Tda.
+Tda (pronounced "ta-da!"), which stands for ``Tcl Data Analysis'', adds features such as N-dimensional arrays and tabular data structures to Tcl. 
+Tda was originally developed for OpenSees, an open-source scripting-based finite-element analysis software, specializing in earthquake engineering simulation \cite{mckenna_nonlinear_2010}, but it is general enough for any Tcl application. 
 
-Tda version \version\ was written for OpenSees 3.3.0 and Tcl 8.6.10. 
-Tda was originally developed for OpenSees users, but is general enough for any Tcl application. 
+Tda version \version\ contains the following sub-packages and their respective versions:
+
+\begin{tabular}{lll}
+Package & Version & Description \\
+\hline
+ tda::ndlist & \version[ndlist] & \nameref{ndlist}\\
+ tda::tbl & \version[tbl] & \nameref{tbl}\\
+ tda::io & \version[io] & \nameref{io}\\
+ tda::vis & \version[vis] & \nameref{vis}
+\end{tabular}
+
+\clearpage
+\section{Notation}
+This manual is for Tcl commands, and the notation style is as follows:
+\begin{itemize}
+\item The prefix \texttt{\$} is used to denote an input variable, and all other words are literal strings.
+\item Option keywords are typically denoted with the prefix \texttt{-}, and all optional inputs are denoted by enclosing in \texttt{<>} braces.
+\item An arbitrary number of arguments is denoted by ``1 2 ...'' notation, (e.g. \texttt{\$arg1 \$arg2 ...}), unless if the arguments must be paired, in which case it will use a ``key value ...'' notation.
+\end{itemize}
+Below is an example of the notation used for commands in this manual.
+\begin{syntax}
+command \$foo <-bar> <\$key \$value ...>
+\end{syntax}
+\begin{args}
+\$foo & Required variable input ``foo''. \\
+-bar & Optional keyword ``-bar''. \\
+\$key \$value ... & Optional paired list (arbitrary number of pairs).
+\end{args}
+
+\clearpage
+\section{Loading and Importing Tda Commands}
+Tda is organized into modules, each contained within a unique namespace and package name, prefixed with \textit{tda}, the parent namespace/package. 
+Loading the main \textit{tda} package using  \textit{package require} loads all the modules.
+Alternatively, modules can be individually loaded by specifying the module package names.
+\begin{syntax}
+package require tda <\$version> \\
+package require <-exact> tda::\$module <\$version>
+\end{syntax}
+\begin{args}
+-exact & Option to require an exact version (must also include \$version). \\
+\$module & Specific Tda module to require. \\
+\$version & Specify minimum version number. Default highest stable version.
+\end{args}
+When Tda modules are loaded with \textit{package require}, procedures are created within the modules' respective namespaces. These commands can then be accessed with their fully-qualified names (such as \textit{tda::ndlist::range}), or the commands can be imported with \textit{namespace import}, as shown below.
+\begin{example}{Loading and importing Tda}
+\begin{lstlisting}
+package require tda
+namespace import tda::*
+puts [range 5]
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+0 1 2 3 4
+\end{lstlisting}
+\end{example}
+\clearpage
+\section{Object Oriented Tcl}
+Some features in Tda (such as \textit{tda::tbl} tables) follow an object-oriented paradigm, using the built-in ``TclOO'' package. 
+Additionally, all Tda widgets are object oriented, using the framework provided by the required package ``wob'' (\hyperlink{https://github.com/ambaker1/wob}{https://github.com/ambaker1/wob}).
+
+In TclOO, a ``class'' command acts as a template for creating ``objects'', or commands that are linked to unique namespaces and have subcommands, or ``methods'' that allow for access and modification of variables in the object's namespace.
+Since the TclOO package is utilized, all Tda classes have standard methods ``new'' and ``create'', and all Tda objects have the standard method ``destroy''.
+Additionally, as TclOO is standard to Tcl, class and object introspection using the \textit{info} command can be used to dive into the structure of the class (using its fully declared name) and its objects.
+
+To demonstrate TclOO basics, see the example below of a fictitious class named ``foo''.
+\begin{example}{TclOO basics}
+\begin{lstlisting}
+# Create objects from a class named 'foo'
+set bar1 [foo new]; # Creates object with auto-generated name, storing in variable 'bar1'
+foo create bar2; # Creates object with explicit command name 'bar2'
+puts [info class instances foo]; # Display all instances of 'foo'
+$bar1 destroy; # Destroys object stored in variable 'bar1'
+bar2 destroy; # Destroys object 'bar2'
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+::oo::Obj12 ::bar2
+\end{lstlisting}
+\end{example}
 
 \cleartooddpage[\thispagestyle{empty}]
 \section*{Copyright and Disclaimer}
