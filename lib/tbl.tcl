@@ -12,7 +12,7 @@
 # Define namespace
 namespace eval ::tda::tbl {
     # Table object class
-    namespace export tdatbl
+    namespace export tbl
 }
 
 # IsUnique --
@@ -35,7 +35,7 @@ proc ::tda::tbl::NormalizeIndex {n index} {
 }
 
 # Definition of the table class and its methods:
-oo::class create ::tda::tbl::tdatbl {
+oo::class create ::tda::tbl::tbl {
     # Variables used in all methods
     variable keys keymap keyname fields fieldmap fieldname data
     
