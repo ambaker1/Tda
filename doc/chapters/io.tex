@@ -25,24 +25,26 @@ The table (\textbf{tbl}) datatype represents tabular data with row and column na
 If headers or row names are not used for  when converting to tabular data, default keys and fields will be generated, with keys starting at 1 and fields starting at ``A''.
 To convert between ``mat'' \& ``tbl'', use the commands \cmdlink{mat2tbl} \& \cmdlink{tbl2mat}.
 \begin{syntax}
-\command{mat2tbl} \$matrix <\$fieldRow> <\$keyColumn>
+\command{mat2tbl} \$matrix <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$matrix & Matrix (row-oriented list of lists) \\
-\$fieldRow & Boolean, whether to use first row of the matrix as fields. Default true \\
-\$keyColumn & Boolean, whether to use the first column of the matrix as keys. Default true
+\$hRow & Whether to use first row of the matrix as fields. Default true \\
+\$hCol & Whether to use the first column of the matrix as keys. Default true
 \end{args}
 \begin{syntax}
-\command{tbl2mat} \$tblObj <\$fieldRow> <\$keyColumn>
+\command{tbl2mat} \$tblObj <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$tblObj & Tda table object name \\
-\$fieldRow & Boolean, whether to include table fields as first row in matrix. Default true \\
-\$keyColumn & Boolean, whether to include table keys as first column in matrix. Default true
+\$hRow & Whether to include fields as first row in matrix. Default true \\
+\$hCol & Whether to include keys as first column in matrix. Default true
 \end{args}
 \clearpage
 \subsection{Space-Delimited Text (txt)}
-The space-delimited text (\textbf{txt}) datatype is simply space-delimited values, where new lines separate rows. Escaping of spaces and newlines is consistent with Tcl rules for valid lists. An example of the same data from the matrix example in \textbf{txt} format is shown below.
+The space-delimited text (\textbf{txt}) datatype is simply space-delimited values, where new lines separate rows. 
+Escaping of spaces and newlines is consistent with Tcl rules for valid lists. 
+An example of the same data from the matrix example in \textbf{txt} format is shown below.
 \begin{example}{Example Data (\textbf{txt}):}
 \begin{lstlisting}
 step disp force
@@ -53,24 +55,26 @@ step disp force
 \end{example}
 To convert between \textbf{mat} \& \textbf{txt}, use the commands \cmdlink{mat2txt} \& \cmdlink{txt2mat}. 
 \begin{syntax}
-\command{mat2txt} \$matrix <\$includeHeaders> <\$includeRownames>
+\command{mat2txt} \$matrix <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$matrix & Matrix (row-oriented list of lists) \\
-\$includeHeaders & Boolean, whether to include first row of the matrix. Default true \\
-\$includeRownames & Boolean, whether to include first column of the matrix. Default true
+\$hRow & Whether to include header row. Default true \\
+\$hCol & Whether to include header column. Default true
 \end{args}
 \begin{syntax}
-\command{txt2mat} \$txt <\$includeHeaders> <\$includeRownames>
+\command{txt2mat} \$txt <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$txt & Space \& newline-delimited table \\
-\$includeHeaders & Boolean, whether to include first row of the text data. Default true \\
-\$includeRownames & Boolean, whether to include first column of the text data. Default true
+\$hRow & Whether to include header row. Default true \\
+\$hCol & Whether to include header column. Default true
 \end{args}
 \clearpage
 \subsection{Comma-Separated Values (csv)}
-The comma-separated values (\textbf{csv}) datatype is comma delimited values, where new lines separate rows. Commas and newlines are escaped with quotes, and quotes are escaped with double-quotes. This datatype is commonly used in post-processing and plotting programs, such as MS Excel. An example of the same data from the matrix example in \textbf{csv} format is shown below.
+The comma-separated values (\textbf{csv}) datatype is comma delimited values, where new lines separate rows. 
+Commas and newlines are escaped with quotes, and quotes are escaped with double-quotes. 
+An example of the same data from the matrix example in \textbf{csv} format is shown below.
 \begin{example}{Example Data (\textbf{csv}):}
 \begin{lstlisting}
 step,disp,force
@@ -81,20 +85,20 @@ step,disp,force
 \end{example}
 To convert between \textbf{mat} \& \textbf{csv}, use the commands \cmdlink{mat2csv} \& \cmdlink{csv2mat}. 
 \begin{syntax}
-\command{mat2csv} \$matrix <\$hRows> <\$hCols>
+\command{mat2csv} \$matrix <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$matrix & Matrix \\
-\$hRows & Number of header rows to truncate. Default 0. \\
-\$hCols & Number of header columns to truncate. Default 0.
+\$hRow & Whether to include header row. Default true \\
+\$hCol & Whether to include header column. Default true
 \end{args}
 \begin{syntax}
-\command{csv2mat} \$csv <\$includeHeaders> <\$includeRownames>
+\command{csv2mat} \$csv <\$hRow> <\$hCol>
 \end{syntax}
 \begin{args}
 \$csv & Comma-separated values (with escaped commas, newlines, and quotes) \\
-\$includeHeaders & Boolean, whether to include headers from CSV data. Default true \\
-\$includeRownames & Boolean, whether the CSV data has rownames. Default true
+\$hRow & Whether to include header row. Default true \\
+\$hCol & Whether to include header column. Default true
 \end{args}
 \clearpage
 \subsection{Conversion Shortcuts}
@@ -117,7 +121,7 @@ step,disp,force
 3,0.07,12.6
 \end{lstlisting}
 \end{example}
-For data conversions that use matrix as an intermediate format, shortcut commands are provided, illustrated in the table below. The optional arguments \texttt{\$includeHeaders} \& \texttt{\$includeRownames} are the same for the shortcut conversion commands.
+For data conversions that use matrix as an intermediate format, shortcut commands are provided, illustrated in the table below. The optional arguments \texttt{\$hRow} \& \texttt{\$hCol} are the same for the shortcut conversion commands.
 \begin{center}
 \begin{tabular}{|r|c|c|c|}
 \hline
@@ -131,14 +135,6 @@ For data conversions that use matrix as an intermediate format, shortcut command
 \hline
 \end{tabular}
 \end{center}
-One application of a shortcut conversion is bulk conversion of all recorder output files to \textbf{csv}.
-\begin{example}{Example Code (convert .out files to .csv):}
-\begin{lstlisting}
-foreach filename [glob *.out] {
-    writeFile [file rootname $filename].csv [txt2csv [readFile $filename]]
-}
-\end{lstlisting}
-\end{example}
 \clearpage
 \section{File Utilities}
 The commands \cmdlink{readFile}, \cmdlink{writeFile}, and \cmdlink{appendFile} simplify reading and writing of files in Tcl. Syntax is inspired from similar commands in the Tcllib fileutil package.
@@ -187,15 +183,15 @@ goodbye moon
 In addition to the fundamental file utilities and data conversion commands, the ``data'' module also provides some shortcut commands for common data import and export workflows.
 \subsection{Matrix Import and Export}
 The commands \cmdlink{readMatrix} and \cmdlink{writeMatrix} read/write a matrix from/to a file, converting from/to \textbf{csv} if the extension is .csv, and converting from/to \textbf{txt} otherwise.
-Except for the input argument \texttt{\$matrixrix}, the input arguments are identical to \cmdlink{readFile} and \cmdlink{writeFile}.
+Except for the input argument \texttt{\$matrix}, the input arguments are identical to \cmdlink{readFile} and \cmdlink{writeFile}.
 \begin{syntax}
 \command{readMatrix} <\$option \$value ...> <-newline> \$filename
 \end{syntax}
 \begin{syntax}
-\command{writeMatrix} <\$option \$value ...> <-nonewline> \$filename \$matrixrix
+\command{writeMatrix} <\$option \$value ...> <-nonewline> \$filename \$matrix
 \end{syntax}
 \begin{args}
-\$matrixrix & Matrix to convert and write to file.
+\$matrix & Matrix to convert and write to file.
 \end{args}
 \subsection{Table Import and Export}
 The commands \cmdlink{readTable} and \cmdlink{writeTable} read/write a table from/to a file, converting from/to \textbf{csv} if the extension is .csv, and converting from/to \textbf{txt} otherwise.
