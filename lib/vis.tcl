@@ -34,8 +34,8 @@ proc ::tda::vis::viewTable {table} {
     # Create widget for viewing table
     set widget [::wob::widget new "Table $table"]
     $widget eval {package require Tktable}
-    $widget alias GetValue $table index2
-    $widget alias CopyCSV ::tda::io::mat2csv
+    $widget alias GetValue $table index
+    $widget alias CopyCSV ::tda::mat2csv
     $widget set n [$table height]
     $widget set m [$table width]
     $widget eval {
@@ -57,9 +57,9 @@ proc ::tda::vis::viewTable {table} {
         table .f.tbl -rows [expr {$n + 1}] -cols [expr {$m + 1}] \
                 -titlerows 1 -titlecols 1 -height 20 -width 10 \
                 -yscrollcommand {.f.sbar set} -invertselected 1 \
-                -command {GetValue %r %c} -state disabled -wrap 1 \
-                -rowstretchmode unset -colstretchmode all \
-                -selecttitle 1 -selectmode extended
+                -command {GetValue [expr {%r - 1}] [expr {%c - 1}]} \
+                -state disabled -wrap 1 -rowstretchmode unset \
+                -colstretchmode all -selecttitle 1 -selectmode extended
         .f.tbl tag configure active -fg black
         .f.tbl height 0 1; # Height of title row 
 
