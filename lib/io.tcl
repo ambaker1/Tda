@@ -534,6 +534,11 @@ proc ::tda::io::txt2csv {txt {hRows 0} {hCols 0}} {
 }
 proc ::tda::io::csv2txt {csv {hRows 0} {hCols 0}} {
     mat2txt [csv2mat $csv $hRows $hCols]
+
+# Import all exported command into parent package
+namespace eval ::tda {
+    namespace import -force io::*
+    namespace export {*}[namespace eval io {namespace export}]
 }
 
 # Finally, provide the package

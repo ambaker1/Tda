@@ -1559,5 +1559,11 @@ oo::class create ::tda::tbl::tbl {
     }
 }
 
+# Import all exported command into parent package
+namespace eval ::tda {
+    namespace import -force tbl::*
+    namespace export {*}[namespace eval tbl {namespace export}]
+}
+
 # Finally, provide the package
 package provide tda::tbl 0.1.0

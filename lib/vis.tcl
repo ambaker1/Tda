@@ -448,5 +448,11 @@ oo::class create ::tda::vis::ScatterPlot {
     }
 }
 
+# Import all exported command into parent package
+namespace eval ::tda {
+    namespace import -force vis::*
+    namespace export {*}[namespace eval vis {namespace export}]
+}
+
 # Finally, provide the package
 package provide tda::vis 0.1.0
