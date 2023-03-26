@@ -271,6 +271,7 @@ proc ::tda::io::writeTable {args} {
 # txt: Space-delineated with newlines to separate rows (actually Tcl lists)
 # csv: Comma-separated values, with newlines to separate rows.
 # mat: List of rows, using Tcl lists. See ndlist module.
+# arr: Tcl array variable, with $arr($i,$j) indexing.
 # tbl: Tabular data, using dictionaries. See table module.
 # The base data type is matrix. So, all main conversion functions convert 
 # between matrix and other types. Other conversion functions are derived.
@@ -282,18 +283,21 @@ proc ::tda::io::writeTable {args} {
 #
 # Arguments:
 # matrix:       Matrix to trim (or not)
-# hRows:        Number of header rows
-# hCols:        Number of header columns
+# hRow:         Include header row
+# hCol:         Include header column
 
-proc ::tda::io::TrimMatrix {matrix hRows hCols} {
-    if {$hRows > 0} {
-        set matrix [lrange $matrix $hRows end]
+proc ::tda::io::TrimMatrix {matrix hRow hCol} {
+    if {!$hRow} {
+        set matrix [lrange $matrix 1 end]
     }
-    if {$hCols > 0} {
-        set matrix [lmap row $matrix {lrange $row $hCols end}]
+    if {!$hCol} {
+        set matrix [lmap row $matrix {lrange $row 1 end}]
     }
     return $matrix
 }
+
+# Text (txt) format
+################################################################################
 
 # txt2mat --
 #
@@ -304,10 +308,10 @@ proc ::tda::io::TrimMatrix {matrix hRows hCols} {
 # Arguments:
 #
 # text:     Text to convert
-# hRows:    Number of header rows to truncate. Default 0
-# hCols:    Number of header columns to truncate. Default 0
+# hRow:     Include header row. Default 1
+# hCol:     Include header column. Default 1
 
-proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
+proc ::tda::io::txt2mat {text {hRow 1} {hCol 1}} {
     set matrix ""
     set row ""
     foreach line [split $text \n] {
@@ -320,7 +324,7 @@ proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
             append row \n
         }
     }
-    return [TrimMatrix $matrix $hRows $hCols]
+    return [TrimMatrix $matrix $hRow $hCol]
 }
 
 # mat2txt --
@@ -330,12 +334,15 @@ proc ::tda::io::txt2mat {text {hRows 0} {hCols 0}} {
 # Arguments:
 #
 # matrix:       Matrix to convert
-# hRows:        Number of header rows to truncate. Default 0
-# hCols:        Number of header columns to truncate. Default 0
+# hRow:         Include header row. Default 1
+# hCol:         Include header column. Default 1
 
-proc ::tda::io::mat2txt {matrix {hRows 0} {hCols 0}} {
-    return [join [TrimMatrix $matrix $hRows $hCols] \n]
+proc ::tda::io::mat2txt {matrix {hRow 1} {hCol 1}} {
+    return [join [TrimMatrix $matrix $hRow $hCol] \n]
 }
+
+# CSV format
+################################################################################
 
 # csv2mat --
 #
@@ -345,10 +352,10 @@ proc ::tda::io::mat2txt {matrix {hRows 0} {hCols 0}} {
 # Arguments:
 #
 # csv:          CSV string to convert
-# hRows:        Number of header rows to truncate. Default 0
-# hCols:        Number of header columns to truncate. Default 0
+# hRow:         Include header row. Default 1
+# hCol:         Include header column. Default 1
 
-proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
+proc ::tda::io::csv2mat {csv {hRow 1} {hCol 1}} {
     # Initialize variables
     set matrix ""; # Output matrix
     set csvRow ""; # CSV-formatted row of data
@@ -397,7 +404,7 @@ proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
         # Clear csv row
         set csvRow ""
     }
-    return [TrimMatrix $matrix $hRows $hCols]
+    return [TrimMatrix $matrix $hRow $hCol]
 }
 
 # mat2csv --
@@ -407,13 +414,13 @@ proc ::tda::io::csv2mat {csv {hRows 0} {hCols 0}} {
 # Arguments:
 #
 # matrix:       Matrix to convert
-# hRows:        Number of header rows to truncate. Default 0
-# hCols:        Number of header columns to truncate. Default 0
+# hRow:         Include header row. Default 1
+# hCol:         Include header column. Default 1
 
-proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
+proc ::tda::io::mat2csv {matrix {hRow 1} {hCol 1}} {
     set csvTable ""
     # Loop through matrix rows
-    foreach row [TrimMatrix $matrix $hRows $hCols] {
+    foreach row [TrimMatrix $matrix $hRow $hCol] {
         set csvRow ""
         foreach val $row {
             # Perform escaping if required
@@ -427,6 +434,9 @@ proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
     return [join $csvTable \n]
 }
 
+# Tda table format
+################################################################################
+
 # tbl2mat --
 #
 # Convert from table to matrix
@@ -434,21 +444,21 @@ proc ::tda::io::mat2csv {matrix {hRows 0} {hCols 0}} {
 # Arguments:
 #
 # table:        Table to convert
-# fieldRow:     Include fields as first row in matrix. Default true
-# keyColumn:    Include keys as first column in matrix. Default true
+# hRow:         Include fields as first row in matrix. Default true
+# hCol:         Include keys as first column in matrix. Default true
 
-proc ::tda::io::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::tbl2mat {table {hRow 1} {hCol 1}} {
     # Get values (blanks for missing data)
     set keys [uplevel 1 $table keys]
     set fields [uplevel 1 $table fields]
     set matrix [uplevel 1 $table values]
     set keyname [uplevel 1 $table keyname]
-    if {$keyColumn} {
+    if {$hCol} {
         set matrix [lmap row $matrix key $keys {linsert $row 0 $key}]
-        if {$fieldRow} {
+        if {$hRow} {
             set matrix [linsert $matrix 0 [linsert $fields 0 $keyname]]
         }
-    } elseif {$fieldRow} {
+    } elseif {$hRow} {
         set matrix [linsert $matrix 0 $fields]
     }
     
@@ -462,31 +472,31 @@ proc ::tda::io::tbl2mat {table {fieldRow 1} {keyColumn 1}} {
 # Arguments:
 #
 # matrix:       Matrix to convert
-# fieldRow:     Use first row as fields. Default true
-# keyColumn:    Use first column as keys. Default true
+# hRow:         Include first row of matrix as fields. Default true
+# hCol:         Include first column of matrix as keys. Default true
 
-proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
+proc ::tda::io::mat2tbl {matrix {hRow 1} {hCol 1}} {
     # Create blank table
-    set table [::tda::tbl::tdatbl new]
+    set table [::tda::tbl new]
 
     # Trim matrix and get keys/fields
-    if {$fieldRow} {
+    if {$hRow} {
         set header [lindex $matrix 0]
         set matrix [lrange $matrix 1 end]
-        if {$keyColumn} {
+        if {$hCol} {
             $table define keyname [lindex $header 0]
             set fields [lrange $header 1 end]
         } else {
             set fields $header
         }
     }
-    if {$keyColumn} {
+    if {$hCol} {
         set keys [lmap row $matrix {lindex $row 0}]
         set matrix [lmap row $matrix {lrange $row 1 end}]
     }
     
     # Generate default keys and fields if required
-    if {!$keyColumn} {
+    if {!$hCol} {
         # Generate default table keys (1 to n)
         set n [llength $matrix]
         set keys ""
@@ -494,7 +504,7 @@ proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
             lappend keys $i
         }
     }
-    if {!$fieldRow} {
+    if {!$hRow} {
         # Generate default fields (A to Z, AA to AZ, etc.)
         set m [llength [lindex $matrix 0]]
         set alpha {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
@@ -516,24 +526,32 @@ proc ::tda::io::mat2tbl {matrix {fieldRow 1} {keyColumn 1}} {
     return $table
 }
 
-# Derived conversions 
-proc ::tda::io::tbl2csv {table {fieldRow 1} {keyColumn 1}} {
-    mat2csv [tbl2mat $table $fieldRow $keyColumn]
+# Derived conversions
+################################################################################
+
+# From Tda Table (tbl)
+proc ::tda::io::tbl2csv {table {hRow 1} {hCol 1}} {
+    mat2csv [tbl2mat $table] $hRow $hCol
 }
-proc ::tda::io::csv2tbl {csv {fieldRow 1} {keyColumn 1}} {
-    mat2tbl [csv2mat $csv] $fieldRow $keyColumn
+proc ::tda::io::tbl2txt {table {hRow 1} {hCol 1}} {
+    mat2txt [tbl2mat $table] $hRow $hCol
 }
-proc ::tda::io::tbl2txt {table {fieldRow 1} {keyColumn 1}} {
-    mat2txt [tbl2mat $table $fieldRow $keyColumn]
+
+# From Text (txt)
+proc ::tda::io::txt2tbl {txt {hRow 1} {hCol 1}} {
+    mat2tbl [txt2mat $txt] $hRow $hCol
 }
-proc ::tda::io::txt2tbl {txt {fieldRow 1} {keyColumn 1}} {
-    mat2tbl [txt2mat $txt] $fieldRow $keyColumn
+proc ::tda::io::txt2csv {txt {hRow 1} {hCol 1}} {
+    mat2csv [txt2mat $txt] $hRow $hCol
 }
-proc ::tda::io::txt2csv {txt {hRows 0} {hCols 0}} {
-    mat2csv [txt2mat $txt $hRows $hCols]
+
+# From CSV
+proc ::tda::io::csv2tbl {csv {hRow 1} {hCol 1}} {
+    mat2tbl [csv2mat $csv] $hRow $hCol
 }
-proc ::tda::io::csv2txt {csv {hRows 0} {hCols 0}} {
-    mat2txt [csv2mat $csv $hRows $hCols]
+proc ::tda::io::csv2txt {csv {hRow 1} {hCol 1}} {
+    mat2txt [csv2mat $csv] $hRow $hCol
+}
 
 # Import all exported command into parent package
 namespace eval ::tda {
