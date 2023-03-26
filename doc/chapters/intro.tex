@@ -1,7 +1,7 @@
 \chapter*{Introduction to Tda}
 \addcontentsline{toc}{chapter}{Introduction to Tda}  
 Tda (pronounced "ta-da!"), which stands for ``Tcl Data Analysis'', adds features such as N-dimensional arrays and tabular data structures to Tcl. 
-Tda was originally developed for OpenSees, an open-source scripting-based finite-element analysis software, specializing in earthquake engineering simulation \cite{mckenna_nonlinear_2010}, but it is general enough for any Tcl application. 
+Tda was originally developed for OpenSees, an open-source scripting-based finite-element analysis software, specializing in earthquake engineering simulation \cite{mazzoni_opensees_2006,mckenna_nonlinear_2010}, but it is general enough for any Tcl application. 
 
 Tda version \version\ contains the following sub-packages and their respective versions:
 
@@ -46,18 +46,22 @@ package require <-exact> tda::\$module <\$version>
 \$module & Specific Tda module to require. \\
 \$version & Specify minimum version number. Default highest stable version.
 \end{args}
-When Tda modules are loaded with \textit{package require}, procedures are created within the modules' respective namespaces. These commands can then be accessed with their fully-qualified names (such as \textit{tda::ndlist::range}), or the commands can be imported with \textit{namespace import}, as shown below.
+When Tda modules are loaded with \textit{package require}, procedures are created within the modules' respective namespaces. 
+These commands can then be accessed with their fully-qualified names (such as \textit{tda::range}), or the commands can be imported with \textit{namespace import}, as shown below.
 \begin{example}{Loading and importing Tda}
 \begin{lstlisting}
 package require tda
+puts [tda::range 5]
 namespace import tda::*
 puts [range 5]
 \end{lstlisting}
 \tcblower
 \begin{lstlisting}
 0 1 2 3 4
+0 1 2 3 4
 \end{lstlisting}
 \end{example}
+
 \clearpage
 \section{Object Oriented Tcl}
 Some features in Tda (such as \textit{tda::tbl} tables) follow an object-oriented paradigm, using the built-in ``TclOO'' package. 
@@ -65,7 +69,7 @@ Additionally, all Tda widgets are object oriented, using the framework provided 
 
 In TclOO, a ``class'' command acts as a template for creating ``objects'', or commands that are linked to unique namespaces and have subcommands, or ``methods'' that allow for access and modification of variables in the object's namespace.
 Since the TclOO package is utilized, all Tda classes have standard methods ``new'' and ``create'', and all Tda objects have the standard method ``destroy''.
-Additionally, as TclOO is standard to Tcl, class and object introspection using the \textit{info} command can be used to dive into the structure of the class (using its fully declared name) and its objects.
+Additionally, as TclOO is standard to Tcl 8.6 and above, class and object introspection using the \textit{info} command can be used to dive into the structure of the class (using its fully declared name) and its objects.
 
 To demonstrate TclOO basics, see the example below of a fictitious class named ``foo''.
 \begin{example}{TclOO basics}
@@ -82,6 +86,7 @@ bar2 destroy; # Destroys object 'bar2'
 ::oo::Obj12 ::bar2
 \end{lstlisting}
 \end{example}
+For a deeper dive into TclOO, check out the Tcl wiki page on it: \hyperlink{https://wiki.tcl-lang.org/page/TclOO}{https://wiki.tcl-lang.org/page/TclOO}
 
 \cleartooddpage[\thispagestyle{empty}]
 \section*{Copyright and Disclaimer}

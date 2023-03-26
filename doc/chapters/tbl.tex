@@ -204,6 +204,7 @@ If the key or field does not exist, returns -1.
 \$field & Field to find.
 \end{args}
 
+\clearpage
 \subsection{Get Table Key/Field}
 The table key or field corresponding with a row or column index (\texttt{end-\textit{integer}} format supported) can be queried with the methods \methodlink[0]{tbl}{key} and \methodlink[0]{tbl}{field}. 
 \begin{syntax}
@@ -216,7 +217,6 @@ The table key or field corresponding with a row or column index (\texttt{end-\te
 \$rid & Row index. \\
 \$cid & Column index.
 \end{args}
-
 \subsection{Table Indexing}
 Table values, keys, fields, and keyname, and fieldname can be accessed with the method \methodlink[0]{tbl}{index}. Using ``-1'' for both \texttt{\$rid} and \texttt{\$cid} will return ``keyname\textbackslash fieldname''.
 \begin{syntax}
@@ -228,7 +228,6 @@ Table values, keys, fields, and keyname, and fieldname can be accessed with the 
 \end{args}
 
 \clearpage
-
 \section{Table Entry and Access}
 Data entry and access to a table object can be done with single values with the methods \methodlink[0]{tbl}{set} and \methodlink[0]{tbl}{get}, entire rows with \methodlink[0]{tbl}{rset} and \methodlink[0]{tbl}{rget}, entire columns with \methodlink[0]{tbl}{cset} and \methodlink[0]{tbl}{cget}, or in matrix fashion with \methodlink[0]{tbl}{mset} and \methodlink[0]{tbl}{mget}. 
 If entry keys/fields do not exist, they are added to the table. 
