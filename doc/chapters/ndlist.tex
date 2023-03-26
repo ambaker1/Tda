@@ -42,16 +42,16 @@ puts [range 10 3 -2]
 \subsection{Generate Linearly Spaced Vector}
 The command \cmdlink{linspace} can be used to generate a vector of specified length and equal spacing between two specified values. 
 \begin{syntax}
-\command{linspace} \$x1 \$x2 \$n
+\command{linspace} \$n \$x1 \$x2 
 \end{syntax}
 \begin{args}
+\$n & Number of points \\
 \$x1 & Starting value \\
-\$x2 & End value \\
-\$n & Number of points
+\$x2 & End value 
 \end{args}
 \begin{example}{Linearly spaced vector generation}
 \begin{lstlisting}
-puts [linspace 0 1 5]
+puts [linspace 5 0 1]
 \end{lstlisting}
 \tcblower
 \begin{lstlisting}
