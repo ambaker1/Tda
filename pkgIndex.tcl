@@ -1,10 +1,10 @@
 if {![package vsatisfies [package provide Tcl] 8.6]} {return}
-package ifneeded tda 0.1.0 {
-    package require tda::ndlist 0.1
-    package require tda::tbl 0.1
-    package require tda::io 0.1
-    package require tda::vis 0.1
-    package provide tda 0.1.0
+package ifneeded tda 0.1.1 {
+    package require tda::ndlist 0.1.0
+    package require tda::tbl 0.1.0
+    package require tda::io 0.1.0
+    package require tda::vis 0.1.0
+    package provide tda 0.1.1
 }
 package ifneeded tda::ndlist 0.1.0 [list source [file join $dir ndlist.tcl]]
 package ifneeded tda::tbl 0.1.0 [list source [file join $dir tbl.tcl]]

@@ -1,13 +1,36 @@
 # Tda
 Tcl Data Analysis
 
-Tda (pronounced "ta-da!"), adds features such as N-dimensional arrays and tabular data structures to Tcl. 
-Tda requires the package "wob", which is available at https://github.com/ambaker1/wob
+Tda (pronounced "ta-da!"), is a comprehensive data analysis package for Tcl.
 
-To install, clone the repository and run the "install.tcl" file.
-To use the package, include the following in your script.
+Tda has the following sub-packages:
+| tda::ndlist | N-dimensional list manipulation |
+| tda::tbl    | Tabular data structure |
+| tda::io     | File utilities and data conversions |
+| tda::vis    | Data visualization tools |
 
+Full documentation is available [here]{doc/tda.pdf}
+
+## Installation
+Tda is a Tin package. Tin makes installing Tcl packages easy, and is available [here]{https://github.com/ambaker1/Tin}.
+After installing Tin, simply include the following in your script to install tda:
+```tcl
+package require tin
+tin add -auto https://github.com/ambaker1/Tin install.tcl 0.1.1-
+tin install tda
+```
+This will install Tda and all dependent Tin packages.
+Once Tda is installed, use the following code to load the package and import the commands.
 ```tcl
 package require tda
 namespace import tda::*
 ```
+Alternatively, the Tin package can also be used to easily import the commands.
+```tcl
+package require tin
+tin import tda
+```
+
+## Collaboration
+If you would like to collaborate and improve Tda, fork the repository and submit a pull request.
+

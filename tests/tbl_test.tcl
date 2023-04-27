@@ -1,4 +1,4 @@
-source include.tcl
+# Called from "build.tcl" in parent directory
 
 # Table module
 tie tblObj [tbl new]

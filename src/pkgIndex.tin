@@ -1,0 +1,12 @@
+if {![package vsatisfies [package provide Tcl] 8.6]} {return}
+package ifneeded tda @VERSION@ {
+    package require tda::ndlist @VERSION_NDLIST@
+    package require tda::tbl @VERSION_TBL@
+    package require tda::io @VERSION_IO@
+    package require tda::vis @VERSION_VIS@
+    package provide tda @VERSION@
+}
+package ifneeded tda::ndlist @VERSION_NDLIST@ [list source [file join $dir ndlist.tcl]]
+package ifneeded tda::tbl @VERSION_TBL@ [list source [file join $dir tbl.tcl]]
+package ifneeded tda::io @VERSION_IO@ [list source [file join $dir io.tcl]]
+package ifneeded tda::vis @VERSION_VIS@ [list source [file join $dir vis.tcl]]
