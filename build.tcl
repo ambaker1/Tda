@@ -5,7 +5,7 @@ tin import wob; # For mainLoop
 
 # Define build configuration
 set config ""
-dict set config VERSION 0.1.2
+dict set config VERSION 0.1.1
 dict set config VERSION_NDLIST 0.1.0
 dict set config VERSION_TBL 0.1.0
 dict set config VERSION_IO 0.1.0
