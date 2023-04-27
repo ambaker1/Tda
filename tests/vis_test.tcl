@@ -1,4 +1,4 @@
-source include.tcl
+# Called from "build.tcl" in parent directory
 
 namespace path ::tcl::mathfunc
 set x [linsteps 0.01 -10 10]
@@ -16,4 +16,4 @@ $tblObj define data {
 }
 viewTable $tblObj
 viewMatrix [$tblObj values]
-wob::mainLoop
+mainLoop

@@ -1,30 +1,30 @@
-source include.tcl
+# Called from "build.tcl" in parent directory
 
 # Export data to file (creates or overwrites the file)
-putsFile example.txt "hello world"
+putsFile tests/example.txt "hello world"
 # Import the contents of the file (requires that the file exists)
-assert [readFile example.txt] eq "hello world"
+assert [readFile tests/example.txt] eq "hello world"
 
-writeFile example.txt "hello world"
-appendFile -nonewline example.txt "goodbye "
-appendFile example.txt "moon"
+writeFile tests/example.txt "hello world"
+appendFile -nonewline tests/example.txt "goodbye "
+appendFile tests/example.txt "moon"
 
-assert [readFile example.txt] eq "hello world\ngoodbye moon"
+assert [readFile tests/example.txt] eq "hello world\ngoodbye moon"
 
 # Binary files
 # Example modified from example on tcl wiki written by Mac Cody and Jeff David
 # https://wiki.tcl-lang.org/page/Working+with+binary+data
 set outBinData [binary format s2Sa6B8 {100 -2} 100 foobar 01000001]
 puts "Format done: $outBinData"
-writeFile -translation binary binfile.bin $outBinData
-set inBinData [readFile -translation binary binfile.bin]
+writeFile -translation binary tests/binfile.bin $outBinData
+set inBinData [readFile -translation binary tests/binfile.bin]
 puts [binary scan $inBinData s2Sa6B8 val1 val2 val3 val4]
 puts "Scan done: $val1 $val2 $val3 $val4"
 
 # Acid test for csv parser/writer
 # Acid test files from https://github.com/maxogden/csv-spectrum
 
-set csvDir "csv_samples"
+set csvDir "tests/csv_samples"
 set commas_in_quotes [readFile $csvDir/comma_in_quotes.csv]
 set empty [readFile $csvDir/empty.csv]
 set empty_crlf [readFile $csvDir/empty_crlf.csv]
