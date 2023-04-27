@@ -1,8 +1,4 @@
-# Script to install package in Tcl installation library folder
-set install_path [file join {*}[file dirname [info library]] tda-0.1.0]
-file delete -force $install_path
-file mkdir $install_path
-file copy LICENSE $install_path
-file copy README.md $install_path
-file copy doc/tda.pdf $install_path
-file copy {*}[glob -directory lib *] $install_path
+package require tin 0.4.2
+tin depend wob 0.1
+set dir [tin mkdir -force tda 0.1.2]
+file copy pkgIndex.tcl ndlist.tcl tbl.tcl io.tcl vis.tcl README.md LICENSE $dir
