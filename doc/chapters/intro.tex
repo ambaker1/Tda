@@ -61,6 +61,19 @@ puts [range 5]
 0 1 2 3 4
 \end{lstlisting}
 \end{example}
+Alternatively, the Tin package can be used to load Tda and import all of its commands.\\
+Tin also can be used to install and upgrade Tda, and is available at \url{https://github.com/ambaker1/Tin}.
+\begin{example}{Loading and importing Tda with Tin}
+\begin{lstlisting}
+package require tin
+tin import tda
+puts [range 5]
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+0 1 2 3 4
+\end{lstlisting}
+\end{example}
 
 \clearpage
 \section{Object Oriented Tcl}
