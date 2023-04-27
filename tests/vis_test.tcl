@@ -16,4 +16,14 @@ $tblObj define data {
 }
 viewTable $tblObj
 viewMatrix [$tblObj values]
+
+set N [range 1 100]
+set sn [vexpr n $N {1.0/($n + 3) - 1.0/($n + 5)}]
+set sum 0.0
+set Sn [vfor x $sn {
+    set sum [expr {$sum + $x}]
+}]
+viewMatrix [augment $N $sn $Sn]
+plotXY $N $sn
+plotXY $N $Sn
 mainLoop

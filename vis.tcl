@@ -370,12 +370,14 @@ oo::class create ::tda::vis::ScatterPlot {
             foreach {x y} $coords {
                 if {$x < $xMinData} {
                     set xMinData $x
-                } elseif {$x > $xMaxData} {
+                } 
+                if {$x > $xMaxData} {
                     set xMaxData $x
                 }
                 if {$y < $yMinData} {
                     set yMinData $y
-                } elseif {$y > $yMaxData} {
+                }
+                if {$y > $yMaxData} {
                     set yMaxData $y
                 }
             }
@@ -455,4 +457,4 @@ namespace eval ::tda {
 }
 
 # Finally, provide the package
-package provide tda::vis 0.1.0
+package provide tda::vis 0.1.1
