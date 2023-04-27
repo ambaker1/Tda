@@ -18,8 +18,7 @@ Full documentation is available [here](https://github.com/ambaker1/Tda/blob/main
 Tda is a Tin package. Tin makes installing Tcl packages easy, and is available [here](https://github.com/ambaker1/Tin).
 After installing Tin, simply include the following in your script to install tda:
 ```tcl
-package require tin
-tin add -auto tda https://github.com/ambaker1/Tda install.tcl 0.1.1-
+package require tin 0.4.5
 tin install tda
 ```
 This will install Tda and all dependent Tin packages.
