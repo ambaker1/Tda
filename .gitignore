@@ -1,4 +1,5 @@
 working/
+build/
 desktop.ini
 doc/**
 !doc/Tda.pdf
