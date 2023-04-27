@@ -455,4 +455,4 @@ namespace eval ::tda {
 }
 
 # Finally, provide the package
-package provide tda::vis 0.1.0
+package provide tda::vis @VERSION_VIS@

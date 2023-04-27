@@ -1555,4 +1555,4 @@ namespace eval ::tda {
 }
 
 # Finally, provide the package
-package provide tda::tbl 0.1.0
+package provide tda::tbl @VERSION_TBL@

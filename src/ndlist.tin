@@ -2102,4 +2102,4 @@ namespace eval ::tda {
 }
 
 # Finally, provide the package
-package provide tda::ndlist 0.1.0
+package provide tda::ndlist @VERSION_NDLIST@
