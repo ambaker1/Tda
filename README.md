@@ -4,6 +4,9 @@ Tcl Data Analysis
 Tda (pronounced "ta-da!"), is a comprehensive data analysis package for Tcl.
 
 Tda has the following sub-packages:
+
+| Module      | Description |
+| ----------- | ----------- |
 | tda::ndlist | N-dimensional list manipulation |
 | tda::tbl    | Tabular data structure |
 | tda::io     | File utilities and data conversions |
