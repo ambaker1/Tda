@@ -12,7 +12,7 @@ Tda has the following sub-packages:
 | tda::io     | File utilities and data conversions |
 | tda::vis    | Data visualization tools |
 
-Full documentation is available [here]{doc/tda.pdf}
+Full documentation is available [here]{https://github.com/ambaker1/Tda/blob/main/doc/tda.pdf}
 
 ## Installation
 Tda is a Tin package. Tin makes installing Tcl packages easy, and is available [here]{https://github.com/ambaker1/Tin}.
