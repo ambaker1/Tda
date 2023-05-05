@@ -80,6 +80,31 @@ oo::class create ::tda::tbl::tbl {
         return
     }
     
+        
+    # $tblObj wipe --
+    #
+    # Reset table entirely to defaults
+    
+    method wipe {} {
+        my clear
+        set fields ""; # Ordered list of fields
+        set fieldmap ""; # Dictionary of fields and indices
+        set keyname key; # Name of keys (first column name)
+        set fieldname field; # Name of fields
+        return
+    }
+        
+    # $tblObj clear --
+    #
+    # Clear out all data in table (keeps keyname/fieldname, and fields/fieldmap)
+    
+    method clear {} {
+        set data ""; # Double-nested dictionary of table data
+        set keys ""; # Ordered list of keys
+        set keymap ""; # dictionary of keys and indices
+        return
+    }
+    
     # $tblObj --
     #
     # Calling the table object without any arguments will just return properties
@@ -104,33 +129,10 @@ oo::class create ::tda::tbl::tbl {
     # Table property definition
     ########################################################################
     
-    # $tblObj clear --
-    #
-    # Clear out all data in table (keeps keyname/fieldname, and fields/fieldmap)
-    
-    method clear {} {
-        set data ""; # Double-nested dictionary of table data
-        set keys ""; # Ordered list of keys
-        set keymap ""; # dictionary of keys and indices
-        return
-    }
-    
-    # $tblObj wipe --
-    #
-    # Reset table entirely to defaults
-    
-    method wipe {} {
-        my clear
-        set fields ""; # Ordered list of fields
-        set fieldmap ""; # Dictionary of fields and indices
-        set keyname key; # Name of keys (first column name)
-        set fieldname field; # Name of fields
-        return
-    }
-    
     # $tblObj define --
     # 
     # Define main table properties (everything that defines a table)
+    # keys/fields must be unique
     # key-value input
     # 
     # Arguments:
@@ -155,50 +157,32 @@ oo::class create ::tda::tbl::tbl {
                     set fieldname $value
                 }
                 keys {
-                    # Ensure no duplicates
                     if {![IsUnique $value]} {
-                        return -code error "Cannot have duplicate keys"
+                        return -code error "Keys must be unique"
                     }
-                    # Redefine keys and keymap
-                    set keys $value
+                    # Redefine keys
+                    set keys ""
                     set keymap ""
-                    set rid 0
-                    foreach key $keys {
-                        dict set keymap $key $rid
-                        incr rid
-                    }
-
+                    my add keys {*}$value
                     # Filter data
-                    foreach key [dict keys $data] {
-                        if {![dict exists $keymap $key]} {
+                    dict for {key rdict} $data {
+                        if {![my exists key $key]} {
                             dict unset data $key
-                        }
-                    }
-                    # Initialize entries
-                    foreach key $keys {
-                        if {![dict exists $data $key]} {
-                            dict set data $key ""
                         }
                     }
                 }
                 fields {
-                    # Ensure no duplicates
                     if {![IsUnique $value]} {
-                        return -code error "Cannot have duplicate fields"
+                        return -code error "Fields must be unique"
                     }
-                    # Redefine fields and fieldmap
-                    set fields $value
+                    # Redefine fields
+                    set fields ""
                     set fieldmap ""
-                    set cid 0
-                    foreach field $fields {
-                        dict set fieldmap $field $cid
-                        incr cid
-                    }
-                    
+                    my add fields {*}$value
                     # Filter data
                     dict for {key rdict} $data {
-                        foreach field [dict keys $rdict] {
-                            if {![dict exists $fieldmap $field]} {
+                        dict for {field value} $rdict {
+                            if {![my exists field $field]} {
                                 dict unset data $key $field
                             }
                         }
@@ -1462,15 +1446,15 @@ oo::class create ::tda::tbl::tbl {
         set oldKeys $keys 
         my clear
         my remove field $field
-        my add field $keyname
+        my add fields $keyname
         foreach oldKey $oldKeys {
             # Skip entry if no data for field.
             if {![dict exists $oldData $oldKey $field]} {
                 continue
             }
-            set rowData [dict get $oldData $oldKey]
-            set newKey [dict get $rowData $field]
-            my set $newKey {*}[dict remove $rowData $field] $keyname $oldKey
+            set rdict [dict get $oldData $oldKey]
+            set newKey [dict get $rdict $field]
+            my set $newKey {*}[dict remove $rdict $field] $keyname $oldKey
         }
         # Define new keyname
         set keyname $field
