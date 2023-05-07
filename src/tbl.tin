@@ -9,14 +9,15 @@
 # redistribution, and for a DISCLAIMER OF ALL WARRANTIES.
 ################################################################################
 
-# Define namespace
-namespace eval ::tda::tbl {
-    # Table object class
+package require tda::ndlist 0.1; # For indexing
+
+# Define table object class
+namespace eval ::tda {
     namespace export tbl
 }
 
 # Definition of the table class and its methods:
-oo::class create ::tda::tbl::tbl {
+oo::class create ::tda::tbl {
     # Variables used in all methods
     variable keys keymap keyname fields fieldmap fieldname data
     
@@ -236,19 +237,37 @@ oo::class create ::tda::tbl::tbl {
     
     # $tblObj keys --
     # 
-    # Access table keys with optional glob pattern
+    # Access table keys with optional glob pattern and index pattern
     #
     # Syntax:
-    # $tblObj keys <$pattern>
+    # $tblObj keys <-i $i> <$pattern>
     #
     # Arguments:
+    # i:            ndlist index pattern. default ":"
     # pattern:      Optional, default *
     
-    method keys {{pattern *}} {
-        if {$pattern eq {*}} {
+    method keys {args} {
+        # Switch for arity
+        if {[llength $args] == 0} {
+            # $tblObj keys
             return $keys
-        } else {
+        } elseif {[llength $args] == 1} {
+            # $tblObj keys $pattern
+            set pattern [lindex $args 0]
             return [lsearch -inline -all $keys $pattern]
+        } 
+        # Handle error case
+        if {[llength $args] > 3 || [lindex $args 0] ne "-i"} {
+            WrongNumArgs "$tblObj keys ?-i i? ?pattern?"
+        }
+        set i [lindex $args 1]; # index pattern
+        if {[llength $args] == 2} {
+            # $tblObj keys -i $i
+            return [::tda::vget $keys $i]
+        } elseif {[llength $args] == 3} {
+            # $tblObj keys -i $i $pattern
+            set pattern [lindex $args 2]
+            return [lsearch -inline -all [::tda::vget $keys $i] $pattern]
         }
     }
     
@@ -257,16 +276,34 @@ oo::class create ::tda::tbl::tbl {
     # Access table fields with optional glob pattern
     #
     # Syntax:
-    # $tblObj fields <$pattern>
+    # $tblObj fields <-j $j> <$pattern>
     # 
     # Arguments:
+    # j:            ndlist index pattern. default ":"
     # pattern:      Optional, default *
     
-    method fields {{pattern *}} {
-        if {$pattern eq {*}} {
+    method fields {args} {
+        # Switch for arity
+        if {[llength $args] == 0} {
+            # $tblObj fields
             return $fields
-        } else {
+        } elseif {[llength $args] == 1} {
+            # $tblObj fields $pattern
+            set pattern [lindex $args 0]
             return [lsearch -inline -all $fields $pattern]
+        } 
+        # Handle error case
+        if {[llength $args] > 3 || [lindex $args 0] ne "-j"} {
+            WrongNumArgs "$tblObj fields ?-j j? ?pattern?"
+        }
+        set j [lindex $args 1]; # index pattern
+        if {[llength $args] == 2} {
+            # $tblObj fields -j $j
+            return [::tda::vget $fields $j]
+        } elseif {[llength $args] == 3} {
+            # $tblObj fields -j $j $pattern
+            set pattern [lindex $args 2]
+            return [lsearch -inline -all [::tda::vget $fields $j] $pattern]
         }
     }
     
@@ -354,9 +391,9 @@ oo::class create ::tda::tbl::tbl {
     # Check if key/field or key/field pairing exists, using hashmaps
     #
     # Syntax:
-    # $tblObj exists -key $key
-    # $tblObj exists -field $field
-    # $tblObj exists -value $key $field
+    # $tblObj exists key $key
+    # $tblObj exists field $field
+    # $tblObj exists value $key $field
     # 
     # Arguments:
     # key:          Key to look up
@@ -390,7 +427,8 @@ oo::class create ::tda::tbl::tbl {
           
     # $tblObj find --
     # 
-    # Find row/column index for a given key/field. Returns -2 if not found.
+    # Find row/column index for a given key/field. 
+    # DEPRECIATED, WILL BE REMOVED IN VERSION 1.0
     #
     # Syntax:
     # $tblObj find key $key
@@ -402,109 +440,199 @@ oo::class create ::tda::tbl::tbl {
     
     method find {option value} {
         switch $option {
-            key {
-                if {[my exists key $value]} {
-                    return [dict get $keymap $value]
-                } elseif {$value eq $fieldname} {
-                    return -1
-                } else {
-                    return -2
-                } 
+            key { 
+                return [my i $value]     
             }
             field {
-                if {[my exists field $value]} {
-                    return [dict get $fieldmap $value]
-                } elseif {$value eq $keyname} {
-                    return -1
-                } else {
-                    return -2
-                } 
+                return [my j $value]
             }
             default {
-                return -code error "Unknown option. Try \"key\" or \"field\""
+                return -code error \
+                        "unknown option \"$option\": want \"key\" or \"field\""
             }
+        }
+    }
+    
+    # $tblObj i --
+    #
+    # Get index for key
+    #
+    # Syntax:
+    # $tblObj i $key
+    #
+    # Arguments:
+    # key:          Key to look up
+    
+    method i {key} {
+        if {[my exists key $key]} {
+            return [dict get $keymap $key]
+        } else {
+            return -code error "key \"$key\" not known in table"
+        }
+    }
+    
+    # $tblObj j --
+    #
+    # Get index for field
+    #
+    # Syntax:
+    # $tblObj j $field
+    #
+    # Arguments:
+    # field:        Field to look up
+    
+    method j {field} {
+        if {[my exists field $field]} {
+            return [dict get $fieldmap $field]
+        } else {
+            return -code error "field \"$field\" not known in table"
         }
     }
     
     # $tblObj key --
     # 
     # Return the key associated with row index
-    # Returns error if out of range
+    # Can use negative indexing per the ndlist package
     #
     # Syntax:
-    # $tblObj key $rid
+    # $tblObj key $i
     #
     # Arguments:
-    # rid:              Row ID (can use end-integer format)
+    # i:        Row index
     
-    method key {rid} {
-        set rid [NormalizeIndex [llength $keys] $rid]
-        if {$rid == -1} {
-            # Fieldname case
-            return $fieldname
+    method key {i} {
+        # Normalize input with ndlist package
+        set i [::tda::ndlist::Index2Integer $i [llength $keys]]
+        if {$i >= [llength $keys]} {
+            return -code error "row index out of range"
         }
-        if {$rid < 0 || $rid >= [llength $keys]} {
-            return -code error "Row ID out of range"
-        }
-        return [lindex $keys $rid]
+        lindex $keys $i
     }
     
     # $tblObj field --
     # 
     # Return the field associated with column index
-    # Returns error if out of range
+    # Can use negative indexing per the ndlist package
     #
     # Syntax:
-    # $tblObj field $cid
+    # $tblObj field $j
     #
     # Arguments:
-    # cid:              Column ID (can use end-integer format)
+    # j:        Column index
     
-    method field {cid} {
-        set cid [NormalizeIndex [llength $fields] $cid]
-        if {$cid == -1} {
-            # Keyname case
-            return $keyname
+    method field {j} {
+        # Normalize input with ndlist package
+        set j [::tda::ndlist::Index2Integer $j [llength $fields]]
+        if {$j >= [llength $fields]} {
+            return -code error "column index out of range"
         }
-        if {$cid < 0 || $cid >= [llength $fields]} {
-            return -code error "Column ID out of range"
-        }
-        return [lindex $fields $cid]
+        lindex $fields $j
     }
     
     # Table entry
     ########################################################################
-        
+    
+    
+    
     # $tblObj set --
     #
     # Set single values in a table (single or dictionary form)
     #
     # Syntax:
-    # $tblObj set $key $field $value <$field $value ...>
+    # $tblObj set $key $field $value <$field $value ...>; # odd number
+    # $tblObj set -kf $key $field $value <$field $value ...>
+    # $tblObj set -fk $field $key $value <$key $value ...>
+    # $tblObj set -kj $key $j $value <$j $value ...>
+    # $tblObj set -jk $j $key $value <$key $value ...>
+    # $tblObj set -if $i $field $value <$field $value ...>
+    # $tblObj set -fi $field $i $value <$i $value ...>
+    # $tblObj set -ij $i $j $value <$j $value ...>
+    # $tblObj set -ji $j $i $value <$i $value ...>
+    # $tblObj set $i,$j $value <$i,$j $value ...>; # i-j combos
     #
     # Arguments:
-    # key:          Key to set
-    # field:        Field to set
+    # i:            Row index
+    # j:            Column index
+    # key:          Row key
+    # field:        Column field
     # value:        Value to set
 
-    method set {key args} {
-        # Check arity
-        if {[llength $args] % 2 == 1} {
+    method set {args} {
+        # Check for error
+        if {[llength $args] == 1} {
+            
+        }
+        if {[llength $args] < 3} {
             WrongNumArgs "\$tblObj set key field value ?field value ...?"
         }
-        
-        # Add keys and fields
-        my add keys $key
-        my add fields {*}[dict keys $args]
-    
-        # Add data
-        dict for {field value} $args {
-            # Handle blanks
-            if {$value eq ""} {
-                dict unset data $key $field
-            } else {
-                dict set data $key $field $value
-            }; # end if blank
+        # Handle default case
+        if {[llength $args] % 2 == 1} {
+            set args [lassign $args key]
+            # Add keys and fields
+            my add keys $key
+            my add fields {*}[dict keys $args]
+            # Add data
+            dict for {field value} $args {
+                # Handle blanks
+                if {$value eq ""} {
+                    dict unset data $key $field
+                } else {
+                    dict set data $key $field $value
+                }; # end if blank
+            }
+            return
+        }
+        # Handle special cases (even number of args)
+        switch [lindex $args 0] {
+            -kf { # Key, then field-value pairs
+                my set {*}[lrange $args 1 end]; # Default case
+            }
+            -fk { # Field, then key-value pairs
+                set field [lindex $args 1]
+                foreach {key value} [lrange $args 2 end] {
+                    my set $key $field $value
+                }
+            }
+            -kj { # Key, then j-value pairs
+                set key [lindex $args 1]
+                foreach {j value} [lrange $args 2 end] {
+                    my set $key [my field $j] $value
+                }
+            }
+            -jk { # j, then key-value pairs
+                set j [lindex $args 1]
+                my set -fk [my field $j] {*}[lrange $args 2 end]
+            }
+            -if { # i, then field-value pairs
+                set i [lindex $args 1]
+                my set [my key $i] {*}[lrange $args 2 end]; # same as -kf
+            }
+            -fi { # field, then i-value pairs
+                set field [lindex $args 1]
+                foreach {i value} [lrange $args 2 end] {
+                    my set [my key $i] $field $value
+                }
+            }
+            -ij { # i, then j-value pairs
+                set i [lindex $args 1]
+                my set -kj [my key $i] {*}[lrange $args 2 end]
+            }
+            -ji { # j, then i-value pairs
+                set j [lindex $args 1]
+                my set -fi [my field $j] {*}[lrange $args 2 end]
+            }
+            default { # i,j value pairs, or {i j} value pairs
+                foreach {ij value} $args {
+                    if {[llength $ij] == 1} {
+                        set ij [split $ij ,]
+                    }
+                    if {[llength $ij] != 2} {
+                        return -code error "want i,j or \"i j\""
+                    }
+                    lassign $ij i j
+                    my set [my key $i] [my field $j] $value
+                }
+            }
         }
         return
     }
@@ -514,13 +642,34 @@ oo::class create ::tda::tbl::tbl {
     # Set entire row
     #
     # Syntax:
-    # $tblObj rset $key $row
-    # 
+    # $tblObj rset <-k> $key $row
+    # $tblObj rset -i $i $row
+    #
     # Arguments:
+    # i:            Row index
     # key:          Key associated with row
     # row:          List of values (length must match table width, or be scalar)
 
-    method rset {key row} {
+    method rset {args} {
+        # Switch for arity
+        if {[llength $args] == 2} {
+            lassign $args key row
+        } elseif {[llength $args] == 3} {
+            switch [lindex $args 0] {
+                -i { # Row index case
+                    lassign [lrange $args 1 end] i row
+                    set key [my key $i]
+                }
+                -k { # Default case
+                    lassign [lrange $args 1 end] key row
+                }
+                default {
+                    WrongNumArgs "\$tblObj rset -i i row"
+                }
+            }
+        } else {
+            WrongNumArgs "\$tblObj rset key row"
+        }
         # Get input and target dimensions and check for error
         set m0 [llength $fields]
         set m1 [llength $row]
@@ -572,13 +721,34 @@ oo::class create ::tda::tbl::tbl {
     # Set entire column
     #
     # Syntax:
-    # $tblObj cset $field $column
+    # $tblObj cset <-f> $field $column
+    # $tblObj cset -j $j $column
     # 
     # Arguments:
+    # j:            Index for column
     # field:        Field associated with column
     # column:       List of values (length must match height, or be scalar)
 
-    method cset {field column} {
+    method cset {args} {
+        # Switch for arity
+        if {[llength $args] == 2} {
+            lassign $args field column
+        } elseif {[llength $args] == 3} {
+            switch [lindex $args 0] {
+                -j { # Column index case
+                    lassign [lrange $args 1 end] j column
+                    set field [my field $j]
+                }
+                -f { # Default case
+                    lassign [lrange $args 1 end] field column
+                }
+                default {
+                    WrongNumArgs "\$tblObj cset -j j column"
+                }
+            }
+        } else {
+            WrongNumArgs "\$tblObj cset field column"
+        }
         # Get source and input dimensions and get input type
         set n0 [llength $keys]
         set n1 [llength $column]
@@ -632,7 +802,10 @@ oo::class create ::tda::tbl::tbl {
     # Set range of table
     #
     # Syntax:
-    # $tblObj mset <$keys $fields> $matrix
+    # $tblObj mset <-kf> <$keys $fields> $matrix
+    # $tblObj mset -kj $keys $j $matrix
+    # $tblObj mset -if $i $fields $matrix
+    # $tblObj mset -ij $i $j $matrix
     #
     # Arguments:
     # keys:         Keys associated with rows (default all)
@@ -649,6 +822,28 @@ oo::class create ::tda::tbl::tbl {
         } elseif {[llength $args] == 3} {
             # Specified keys and fields (validate)
             lassign $args keyset fieldset matrix
+        } elseif {[llength $args] == 4} {
+            switch [lindex $args 0] {
+                -kf {
+                    lassign [lrange $args 1 end] keyset fieldset matrix
+                }
+                -kj {
+                    lassign [lrange $args 1 end] keyset j matrix
+                    set fieldset [my fields -j $j]
+                }
+                -if {
+                    lassign [lrange $args 1 end] i fieldset matrix
+                    set keyset [my keys -i $i]
+                }
+                -ij {
+                    lassign [lrange $args 1 end] i j matrix
+                    set keyset [my keys -i $i]
+                    set fieldset [my fields -j $j]
+                }
+                default {
+                    WrongNumArgs "\$tblObj mset -ij i j matrix"
+                }
+            }
         } else {
             WrongNumArgs "\$tblObj mset ?keys fields? matrix"
         }
@@ -722,13 +917,46 @@ oo::class create ::tda::tbl::tbl {
     # "keyname\fieldname"
     #
     # Syntax:
-    # $tblObj get $key $field
+    # $tblObj get <-kf> $key $field
+    # $tblObj get -kj $key $j
+    # $tblObj get -if $i $field
+    # $tblObj get -ij $i $j
     #
     # Arguments:
     # key:          key to query (fieldname to return field)
     # field:        field to query (keyname to return key)
 
-    method get {key field} {
+    method get {args} {
+        if {[llength $args] == 1} {
+            
+        }
+        if {[llength $args] == 2} {
+        
+        } elseif {[llength $args] == 3} {
+            switch [lindex $args 0] {
+                -kf {
+                    lassign [lrange $args 1 end] key field
+                }
+                -kj {
+                    lassign [lrange $args 1 end] key j
+                    set field [my field $j]
+                }
+                -if {
+                    lassign [lrange $args 1 end] i field
+                    set key [my key $i]
+                }
+                -ij {
+                    lassign [lrange $args 1 end] i j
+                    set key [my key $i]
+                    set field [my field $j]
+                }
+                default {
+                    WrongNumArgs "\$tblObj get -ij i j field"
+                }
+            }
+        } else {
+            WrongNumArgs "\$tblObj get key field"
+        }
         # Try to get the value first (most common case)
         if {[my exists value $key $field]} {
             return [dict get $data $key $field]
@@ -761,14 +989,14 @@ oo::class create ::tda::tbl::tbl {
     # -1,-1 returns keyname\fieldname
     #
     # Syntax:
-    # $tblObj index $rid $cid
+    # $tblObj index $i $j
     # 
 	# Arguments:
-	# rid:          row index (-1 for fields)
-	# cid:          column index (-1 for keys)
+	# i:          row index (-1 for fields)
+	# j:          column index (-1 for keys)
     
-    method index {rid cid} {
-        my get [my key $rid] [my field $cid]
+    method index {i j} {
+        my get [my key $i] [my field $j]
     }
 
     # $tblObj rget --
@@ -1091,10 +1319,10 @@ oo::class create ::tda::tbl::tbl {
         }; # end if number of fields
         
         # Update key map
-        set rid 0
+        set i 0
         foreach key $keys {
-            dict set keymap $key $rid
-            incr rid
+            dict set keymap $key $i
+            incr i
         }
     
         return
@@ -1218,8 +1446,8 @@ oo::class create ::tda::tbl::tbl {
                 foreach key $args {
                     if {![my exists key $key]} {
                         continue
+                    dict set ridmap $key [my i $key]
                     }
-                    dict set ridmap $key [my rid $key]
                 }
                 # Switch for number of keys to remove
                 if {[dict size $ridmap] == 0} {
@@ -1230,19 +1458,19 @@ oo::class create ::tda::tbl::tbl {
 
                 # Remove from keys and data (k-trick for performance)
                 set count 0; # Count of removed values
-                dict for {key rid} $ridmap {
-                    incr rid -$count; # Adjust for removed elements
-                    set keys [lreplace $keys[set keys ""] $rid $rid]
+                dict for {key i} $ridmap {
+                    incr i -$count; # Adjust for removed elements
+                    set keys [lreplace $keys[set keys ""] $i $i]
                     dict unset keymap $key
                     dict unset data $key
                     incr count
                 }
                 
                 # Update keymap
-                set rid [lindex $ridmap 1]; # minimum removed rid
-                foreach key [lrange $keys $rid end] {
-                    dict set keymap $key $rid
-                    incr rid
+                set i [lindex $ridmap 1]; # minimum removed i
+                foreach key [lrange $keys $i end] {
+                    dict set keymap $key $i
+                    incr i
                 }
             }
             fields {
@@ -1252,7 +1480,7 @@ oo::class create ::tda::tbl::tbl {
                     if {![my exists field $field]} {
                         continue
                     }
-                    dict set cidmap $field [my cid $field]
+                    dict set cidmap $field [my j $field]
                 }
                 
                 # Switch for number of keys to remove
@@ -1264,9 +1492,9 @@ oo::class create ::tda::tbl::tbl {
                 
                 # Remove from fields and data (k-trick for performance)
                 set count 0; # Count of removed values
-                dict for {field cid} $cidmap {
-                    incr cid -$count; # Adjust for removed elements
-                    set fields [lreplace $fields[set fields ""] $cid $cid]
+                dict for {field j} $cidmap {
+                    incr j -$count; # Adjust for removed elements
+                    set fields [lreplace $fields[set fields ""] $j $j]
                     dict unset fieldmap $field
                     dict for {key rdict} $data {
                         dict unset data $key $field
@@ -1275,10 +1503,10 @@ oo::class create ::tda::tbl::tbl {
                 }
                 
                 # Update fieldmap
-                set cid [lindex $cidmap 1]; # minimum removed cid
-                foreach field [lrange $fields $cid end] {
-                    dict set fieldmap $field $cid
-                    incr cid
+                set j [lindex $cidmap 1]; # minimum removed j
+                foreach field [lrange $fields $j end] {
+                    dict set fieldmap $field $j
+                    incr j
                 }
             }
             default {
@@ -1309,17 +1537,14 @@ oo::class create ::tda::tbl::tbl {
                         return -code error "Key \"$key\" already exists"
                     }
                 }
-                # Convert index input to integer, and check
-                set rid [NormalizeIndex [llength $keys] $index]
-                if {$rid < 0 || $rid > [llength $keys]} {
-                    return -code error "Row ID out of range"
-                }
+                # Convert index input to integer
+                set i [::tda::ndlist::Index2Integer $index [llength $keys]]
                 # Insert keys (using k-trick for performance)
-                set keys [linsert $keys[set keys ""] $rid {*}$args]
+                set keys [linsert $keys[set keys ""] $i {*}$args]
                 # Update indices in key map
-                foreach key [lrange $keys $rid end] {
-                    dict set keymap $key $rid
-                    incr rid
+                foreach key [lrange $keys $i end] {
+                    dict set keymap $key $i
+                    incr i
                 }
                 # Ensure that entries in data exist
                 foreach key $args {
@@ -1338,17 +1563,14 @@ oo::class create ::tda::tbl::tbl {
                         return -code error "Field \"$field\" already exists"
                     }
                 }
-                # Convert index input to integer, and check
-                set cid [NormalizeIndex [llength $fields] $index]
-                if {$cid < 0 || $cid > [llength $fields]} {
-                    return -code error "Column ID out of range"
-                }
+                # Convert index input to integer
+                set j [::tda::ndlist::Index2Integer $index [llength $fields]]
                 # Insert fields (using k-trick for performance)
-                set fields [linsert $fields[set fields ""] $cid {*}$args]
+                set fields [linsert $fields[set fields ""] $j {*}$args]
                 # Update indices in field map
-                foreach field [lrange $fields $cid end] {
-                    dict set fieldmap $field $cid
-                    incr cid
+                foreach field [lrange $fields $j end] {
+                    dict set fieldmap $field $j
+                    incr j
                 }
             }
             default {
@@ -1383,14 +1605,14 @@ oo::class create ::tda::tbl::tbl {
                 # intersection between old and new lists)
                 set rids ""
                 foreach oldKey $old newKey $new {
-                    set rid [my rid $oldKey]
-                    lappend rids $rid
-                    lset keys $rid $newKey
+                    set i [my i $oldKey]
+                    lappend rids $i
+                    lset keys $i $newKey
                     dict unset keymap $oldKey
                     dict unset data $oldKey
                 }
-                foreach newKey $new rid $rids row $rows {
-                    dict set keymap $newKey $rid; # update in-place
+                foreach newKey $new i $rids row $rows {
+                    dict set keymap $newKey $i; # update in-place
                     my rset $newKey $row; # Re-add row
                 }
             }
@@ -1402,16 +1624,16 @@ oo::class create ::tda::tbl::tbl {
                 # intersection between old and new lists)
                 set cids ""
                 foreach oldField $old newField $new {
-                    set cid [my cid $oldField]
-                    lappend cids $cid
-                    lset fields $cid $newField
+                    set j [my j $oldField]
+                    lappend cids $j
+                    lset fields $j $newField
                     dict unset fieldmap $oldField
                     dict for {key rdict} $data {
                         dict unset data $key $oldField
                     }
                 }
-                foreach newField $new cid $cids column $columns {
-                    dict set fieldmap $newField $cid; # update in-place
+                foreach newField $new j $cids column $columns {
+                    dict set fieldmap $newField $j; # update in-place
                     my cset $newField $column; # Re-add column
                 }
             }
@@ -1463,77 +1685,71 @@ oo::class create ::tda::tbl::tbl {
     
     # $tblObj rmove/cmove --
     #
-    # Move rows and columns
+    # Move row to a specific row index
     # 
     # Arguments:
-    # key/field:        Key or field to move
-    # index:            Row/column ID to move to.
+    # key:      Key to move
+    # i:        Row index to move to.
     
-    method rmove {key index} {
-        # Get source index, checking validity of key
-        if {![dict exists $keymap $key]} {
-            return -code error "Key \"$key\" not in table"
-        }
-        set i [dict get $keymap $key]
-        # Convert target index input to integer, and check
-        set j [NormalizeIndex [llength $keys] $index]
-        if {$j < 0 || $j >= [llength $keys]} {
-            return -code error "Target row ID out of range"
-        }
+    method rmove {key i} {
+        # Get initial and final row indices
+        set i1 [my i $key]
+        set i2 [my i [my key $i]]
         # Switch for move type
-        if {$i < $j} {
+        if {$i1 < $i2} {
             # Target index is beyond source
-            set keys [concat [lrange $keys 0 $i-1] [lrange $keys $i+1 $j] \
-                    [list $key] [lrange $keys $j+1 end]]
-            set rid $i
-        } elseif {$i > $j} {
+            set keys [concat [lrange $keys 0 $i1-1] [lrange $keys $i1+1 $i2] \
+                    [list $key] [lrange $keys $i2+1 end]]
+            set i $i1
+        } elseif {$i1 > $i2} {
             # Target index is below source
-            set keys [concat [lrange $keys 0 $j-1] [list $key] \
-                    [lrange $keys $j $i-1] [lrange $keys $i+1 end]]
-            set rid $j
+            set keys [concat [lrange $keys 0 $i2-1] [list $key] \
+                    [lrange $keys $i2 $i1-1] [lrange $keys $i1+1 end]]
+            set i $i2
         } else {
             # Trivial case
             return
         }
         # Update keymap
-        foreach key [lrange $keys $rid end] {
-            dict set keymap $key $rid
-            incr rid
+        foreach key [lrange $keys $i end] {
+            dict set keymap $key $i
+            incr i
         }
         return
     }
     
-    method cmove {field index} {
+    # $tblObj rmove --
+    #
+    # Move column to a specific column index
+    # 
+    # Arguments:
+    # field:    Field to move
+    # j:        Column index to move to.
+    
+    method cmove {field j} {
         # Get source index, checking validity of field
-        if {![dict exists $fieldmap $field]} {
-            return -code error "Field \"$field\" not in table"
-        }
-        set i [dict get $fieldmap $field]
-        # Convert target index input to integer, and check
-        set j [NormalizeIndex [llength $fields] $index]
-        if {$j < 0 || $j >= [llength $fields]} {
-            return -code error "Target column ID out of range"
-        }
+        set j1 [my j $field]
+        set j2 [my j [my field $j]]
         # Switch for move type
-        if {$i < $j} {
+        if {$j1 < $j2} {
             # Target index is beyond source
-            set fields [concat [lrange $fields 0 $i-1] \
-                    [lrange $fields $i+1 $j] [list $field] \
-                    [lrange $fields $j+1 end]]
-            set cid $i
-        } elseif {$i > $j} {
+            set fields [concat [lrange $fields 0 $j1-1] \
+                    [lrange $fields $j1+1 $j2] [list $field] \
+                    [lrange $fields $j2+1 end]]
+            set j $i
+        } elseif {$j1 > $j2} {
             # Target index is below source
-            set fields [concat [lrange $fields 0 $j-1] [list $field] \
-                    [lrange $fields $j $i-1] [lrange $fields $i+1 end]]
-            set cid $j
+            set fields [concat [lrange $fields 0 $j2-1] [list $field] \
+                    [lrange $fields $j2 $j1-1] [lrange $fields $j1+1 end]]
+            set j $j2
         } else {
             # Trivial case
             return
         }
         # Update fieldmap
-        foreach field [lrange $fields $cid end] {
-            dict set fieldmap $field $cid
-            incr cid
+        foreach field [lrange $fields $j end] {
+            dict set fieldmap $field $j
+            incr j
         }
         return
     }
@@ -1635,12 +1851,6 @@ oo::class create ::tda::tbl::tbl {
         my remove fields {*}$blankFields
         return
     }
-}
-
-# Import all exported command into parent package
-namespace eval ::tda {
-    namespace import -force tbl::*
-    namespace export {*}[namespace eval tbl {namespace export}]
 }
 
 # Finally, provide the package
