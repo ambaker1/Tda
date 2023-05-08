@@ -13,8 +13,29 @@ package require tda::ndlist 0.1; # For indexing
 package require errmsg 0.2; # For error messages
 
 # Define table object class
-namespace eval ::tda {
+namespace eval ::tda::tbl {
     namespace export tbl
+}
+
+# IsUnique --
+#
+# Helper procedure. Check if a list is unique
+#
+# Syntax:
+# IsUnique $list
+#
+# Arguments:
+# list:             List to check for uniqueness
+
+proc ::tda::tbl::IsUnique {list} {
+    set map ""
+    foreach item $list {
+        if {[dict exists $map $item]} {
+            return 0
+        }
+        dict set map $item ""
+    }
+    return 1
 }
 
 # Definition of the table class and its methods:
@@ -69,39 +90,14 @@ namespace eval ::tda {
 # wipe          # Wipe table (resets to fresh table)
 # with          # Loop through tabular data
 
-oo::class create ::tda::tbl {
+oo::class create ::tda::tbl::tbl {
 # Variables used in all methods
 variable keys keymap keyname fields fieldmap fieldname data
 
 # Constructor - called by "tbl new" and "tbl create"
 constructor {args} {
-    # Initialize table data, and define with constructor input
     my wipe
     my define {*}$args
-
-    # Define helper procedures within table namespace
-    
-    # IsUnique --
-    #
-    # Check if a list is unique
-    #
-    # Syntax:
-    # IsUnique $list
-    #
-    # Arguments:
-    # list:             List to check for uniqueness
-    
-    proc IsUnique {list} {
-        set map ""
-        foreach item $list {
-            if {[dict exists $map $item]} {
-                return 0
-            }
-            dict set map $item ""
-        }
-        return 1
-    }
-    
     return
 }
     
@@ -193,7 +189,7 @@ method define {args} {
                 set fieldname $value
             }
             keys {
-                if {![IsUnique $value]} {
+                if {![::tda::tbl::IsUnique $value]} {
                     return -code error "keys must be unique"
                 }
                 # Redefine keys
@@ -208,7 +204,7 @@ method define {args} {
                 }
             }
             fields {
-                if {![IsUnique $value]} {
+                if {![::tda::tbl::IsUnique $value]} {
                     return -code error "fields must be unique"
                 }
                 # Redefine fields
@@ -405,7 +401,7 @@ method fields {args} {
 
 # $tblObj data --
 #
-# Access dictionary form of data (ordered by entry), with option for key
+# Access unordered data of table. 
 #
 # Syntax:
 # $tblObj data
@@ -418,20 +414,14 @@ method fields {args} {
 
 method data {args} {
     if {[llength $args] == 0} {
-        set orderedData ""
-        foreach key $keys {
-            foreach field $fields {
-                dict set orderedData $key $field [my get $key $field]
-            }
-        }
-        return $orderedData
-    } elseif {[llength $args] == 1} {
+        return $data
+    } elseif {[llength $args] == 1} {  
         set key [lindex $args 0]
-        set orderedRowData ""
-        foreach field $fields value [my rget $key] {
-            dict set orderedRowData $field $value
+        if {[my exists key $key]} {
+            return [dict get $data $key]
+        } else {
+            return -code error "key \"$key\" not found in table"
         }
-        return $orderedRowData
     } elseif {[llength $args] == 2} {
         # Switch for arity
         switch [lindex $args 0] {
@@ -671,7 +661,7 @@ method field {j} {
 
 method set {args} {
     # Check arity
-    if {[llength $args] < 2} {
+    if {[llength $args] == 0} {
         # Default syntax
         ::errmsg::wrongNumArgs "[self] set key field value ?field value ...?"
     }
@@ -1548,20 +1538,20 @@ method with {body} {
 method merge {args} {
     # Check compatibility
     foreach tblObj $args {
-        if {$keyname ne [uplevel 1 [list $tblObj keyname]]} {
+        if {$keyname ne [::$tblObj keyname]} {
             return -code error "cannot merge tables - keyname conflict"
         }
-        if {$fieldname ne [uplevel 1 [list $tblObj fieldname]]} {
+        if {$fieldname ne [::$tblObj fieldname]} {
             return -code error "cannot merge tables - fieldname conflict"
         }
     }
     # Merge input tables
     foreach tblObj $args {
-        # Add keys/fields
-        my add keys {*}[uplevel 1 [list $tblObj keys]]
-        my add fields {*}[uplevel 1 [list $tblObj fields]]
+        # Add keys and fields
+        my add keys {*}[::$tblObj keys]
+        my add fields {*}[::$tblObj fields]
         # Merge data
-        dict for {key rdict} [uplevel 1 [list $tblObj data]] {
+        dict for {key rdict} [::$tblObj data] {
             my set $key {*}$rdict
         }
     }
@@ -1732,7 +1722,7 @@ method insert {type index args} {
     switch $type {
         keys {
             # Ensure input keys are unique and new
-            if {![IsUnique $args]} {
+            if {![::tda::tbl::IsUnique $args]} {
                 return -code error "cannot have duplicate key inputs"
             }
             foreach key $args {
@@ -1758,7 +1748,7 @@ method insert {type index args} {
         }
         fields {
             # Ensure input fields are unique and new
-            if {![IsUnique $args]} {
+            if {![::tda::tbl::IsUnique $args]} {
                 return -code error "cannot have duplicate field inputs"
             }
             foreach field $args {
@@ -1807,12 +1797,12 @@ method rename {type args} {
             fields {set old $fields}
         }
         set new [lindex $args 0]
-        if {![IsUnique $new]} {
+        if {![::tda::tbl::IsUnique $new]} {
             return -code error "new $type must be unique"
         }
     } elseif {[llength $args] == 2} {
         lassign $args old new
-        if {![IsUnique $old] || ![IsUnique $new]} {
+        if {![::tda::tbl::IsUnique $old] || ![::tda::tbl::IsUnique $new]} {
             return -code error "old and new $type must be unique"
         }
     } else {
@@ -2087,6 +2077,13 @@ method clean {} {
     return
 }
 }; # end class definition
+
+
+# Import all exported command into parent package
+namespace eval ::tda {
+    namespace import -force tbl::*
+    namespace export {*}[namespace eval tbl {namespace export}]
+}
 
 # Finally, provide the package
 package provide tda::tbl @VERSION_TBL@
