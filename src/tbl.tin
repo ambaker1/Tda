@@ -234,7 +234,7 @@ oo::class create ::tda::tbl {
                     }
                 }
                 default {
-                    return -code error "Wrong option. Try \"keyname\",\
+                    return -code error "unknown option: want \"keyname\",\
                             \"fieldname\", \"keys\", \"fields\", or \"data\""
                 }
             }; # end switch
@@ -450,8 +450,8 @@ oo::class create ::tda::tbl {
     # key:          Key to look up
     # field:        Field to look up
     
-    method exists {option args} {
-        switch $option {
+    method exists {type args} {
+        switch $type {
             key { # Check if key exists
                 if {[llength $args] != 1} {
                     WrongNumArgs "\$tblObj exists key name"
@@ -471,9 +471,9 @@ oo::class create ::tda::tbl {
                 return [dict exists $data {*}$args]
             }
             default {
-                return -code error "Incorrect option. Try key, field, or value"
+                return -code error "unknown option: want key, field, or value"
             }
-        }; # end switch option
+        }; # end switch type
     }
           
     # $tblObj find --
@@ -489,8 +489,8 @@ oo::class create ::tda::tbl {
     # key:          Key to look up
     # field:        Field to look up
     
-    method find {option value} {
-        switch $option {
+    method find {type value} {
+        switch $type {
             key { 
                 return [my i $value]     
             }
@@ -499,7 +499,7 @@ oo::class create ::tda::tbl {
             }
             default {
                 return -code error \
-                        "unknown option \"$option\": want \"key\" or \"field\""
+                        "unknown type \"$type\": want \"key\" or \"field\""
             }
         }
     }
@@ -1180,12 +1180,15 @@ oo::class create ::tda::tbl {
             set subExpr $fieldExpr
             set valid 1
             foreach {field match} $fieldMap {
-                if {![my exists value $key $field] && $field ne $keyname} {
+                if {![my exists value $key $field]} {
+                    if {$field eq $keyname} {
+                        set subExpr [regsub $match $subExpr "{$key}"]
+                        continue
+                    }
                     # No data for this key/field combo. Skip.
                     set valid 0
                     break
                 }
-                # Subsitute value in fieldExpr
                 set subExpr [regsub $match $subExpr "{[my get $key $field]}"]
             }; # end foreach fieldmap pair
             if {$valid} {
@@ -1493,11 +1496,11 @@ oo::class create ::tda::tbl {
     # Duplicates may be entered with no penalty.
     # 
     # Arguments:
-    # option:       "keys" or "fields"
+    # type:         "keys" or "fields"
     # args:         Keys or fields
     
-    method add {option args} {
-        switch $option {
+    method add {type args} {
+        switch $type {
             keys {
                 foreach key $args {
                     if {![my exists key $key]} {
@@ -1519,7 +1522,7 @@ oo::class create ::tda::tbl {
                 }
             }
             default {
-                return -code error "Unknown option. Try \"key\" or \"field\""
+                return -code error "unknown type: want \"keys\" or \"fields\""
             }
         }
         return
@@ -1530,11 +1533,11 @@ oo::class create ::tda::tbl {
     # Remove keys/fields if they exist. Handles duplicates just fine.
     #
     # Arguments:
-    # option:       "keys" or "fields"
+    # type:         "keys" or "fields"
     # value:        Keys or fields
     
-    method remove {option args} {
-        switch $option {
+    method remove {type args} {
+        switch $type {
             keys {
                 # Get keys to remove in order of index
                 set imap ""
@@ -1605,7 +1608,7 @@ oo::class create ::tda::tbl {
                 }
             }
             default {
-                return -code error "Unknown option. Try \"keys\" or \"fields\""
+                return -code error "unknown type: want \"keys\" or \"fields\""
             }
         }
         return
@@ -1616,20 +1619,20 @@ oo::class create ::tda::tbl {
     # Insert keys/fields (must be unique, and no duplicates)
     #
     # Arguments:
-    # option:       "keys" or "fields"
+    # type:         "keys" or "fields"
     # index:        Row or column ID (with end-integer notation)
     # args:         Keys or fields
     
-    method insert {option index args} {
-        switch $option {
+    method insert {type index args} {
+        switch $type {
             keys {
                 # Ensure input keys are unique and new
                 if {![IsUnique $args]} {
-                    return -code error "Cannot have duplicate key inputs"
+                    return -code error "cannot have duplicate key inputs"
                 }
                 foreach key $args {
                     if {[my exists key $key]} {
-                        return -code error "Key \"$key\" already exists"
+                        return -code error "key \"$key\" already exists"
                     }
                 }
                 # Convert index input to integer
@@ -1651,11 +1654,11 @@ oo::class create ::tda::tbl {
             fields {
                 # Ensure input fields are unique and new
                 if {![IsUnique $args]} {
-                    return -code error "Cannot have duplicate field inputs"
+                    return -code error "cannot have duplicate field inputs"
                 }
                 foreach field $args {
                     if {[my exists field $field]} {
-                        return -code error "Field \"$field\" already exists"
+                        return -code error "field \"$field\" already exists"
                     }
                 }
                 # Convert index input to integer
@@ -1669,7 +1672,7 @@ oo::class create ::tda::tbl {
                 }
             }
             default {
-                return -code error "Unknown option. Try \"keys\" or \"fields\""
+                return -code error "unknown type: want \"keys\" or \"fields\""
             }
         }
         return
@@ -1688,8 +1691,8 @@ oo::class create ::tda::tbl {
     # new:          List of new keys/fields
 
     method rename {type args} {
-        # Check option
-        if {$option ni {keys fields}} {
+        # Check type
+        if {$type ni {keys fields}} {
             return -code error "unknown type. want \"keys\" or \"fields\""
         }
         # Switch for arity
@@ -1756,7 +1759,7 @@ oo::class create ::tda::tbl {
                 }
             }
             default {
-                return -code error "unknown option. want \"keys\" or \"fields\""
+                return -code error "unknown type: want \"keys\" or \"fields\""
             }
         }
         return
@@ -1788,7 +1791,7 @@ oo::class create ::tda::tbl {
         set oldData $data
         set oldKeys $keys 
         my clear
-        my remove field $field
+        my remove fields $field
         my add fields $keyname
         foreach oldKey $oldKeys {
             # Skip entry if no data for field.
