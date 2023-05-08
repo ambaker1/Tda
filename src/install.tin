@@ -1,4 +1,5 @@
-package require tin 0.4.2
+package require tin 0.5.1
 tin depend wob 0.1
+tin depend errmsg 0.1
 set dir [tin mkdir -force tda @VERSION@]
 file copy pkgIndex.tcl ndlist.tcl tbl.tcl io.tcl vis.tcl README.md LICENSE $dir
