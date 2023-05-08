@@ -1,4 +1,4 @@
-package require tin 0.4.4
+package require tin 0.5.1
 tin import vutil; # For tie
 tin import flytrap; # For assert
 tin import wob; # For mainLoop
@@ -11,10 +11,7 @@ dict set config VERSION_TBL 0.2
 dict set config VERSION_IO 0.1
 dict set config VERSION_VIS 0.1.1
 # Bake the source files
-foreach inFile [glob -directory src *.tin] {
-    set outFile [file join build [file rootname [file tail $inFile]].tcl]
-    tin bake $inFile $outFile $config
-}
+tin bake src build $config
 
 set dir build
 source build/pkgIndex.tcl
