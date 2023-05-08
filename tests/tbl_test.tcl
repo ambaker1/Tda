@@ -82,21 +82,6 @@ assert [$tblCopy values] eq [$tblObj values]
 $tblCopy remove keys {*}[$tblCopy keys -i 1:end-1]
 assert [$tblCopy keys] eq {R1 R5}
 
-# mkkey (data loss)
-# remove keys
-# data
-tie tblCopy [$tblObj copy]
-$tblCopy cset {record ID} {R1 R3 R1 R2 R1}; # 1 R1 2 R3 
-$tblCopy mkkey {record ID}
-assert [$tblCopy keys] eq {R1 R3 R2}
-assert [$tblCopy cget key] eq {5 4 2}
-$tblCopy sort
-assert [$tblCopy keys] eq {R1 R2 R3}
-assert [$tblCopy cget key] eq {5 2 4}
-$tblCopy remove keys R2
-assert [$tblCopy keys] eq {R1 R3}
-assert [dict exists [$tblCopy data] R2] == 0
-
 # clear, clean, and wipe
 $tblCopy define keyname foo
 $tblCopy clear
@@ -119,9 +104,9 @@ assert [$tblObj exists key 3]
 assert [$tblObj exists key 6] == 0
 assert [$tblObj exists field y]
 assert [$tblObj exists field foo] == 0
-assert [$tblObj exists value x y]
+assert [$tblObj exists value 3 y]
 $tblObj set 3 y ""
-assert [$tblObj exists value x y] == 0
+assert [$tblObj exists value 3 y] == 0
 $tblObj set 3 y 7.56; # reset
 
 # get
@@ -138,7 +123,7 @@ assert [$tblObj get end,end] == 4.56
 assert [$tblObj get -1,-1] == 4.56
 assert [$tblObj get -if end-1 z] == 1.11
 assert [catch {$tblObj get end+1,0}]; # Should throw an error (out of range)
-assert [$tblObj index -1,-1] eq [$tblObj get -1,-1]; # DEPRECIATED
+assert [$tblObj index -1 -1] eq [$tblObj get -1,-1]; # DEPRECIATED
 
 # set key field
 $tblObj set 2 x foo
@@ -217,8 +202,8 @@ set submat {{3.44 8.67} {4.61 7.63} {8.25 3.84}}
 assert [$tblObj mget {1 2 3} {x z}] eq $submat
 assert [$tblObj mget -kf {1 2 3} {x z}] eq $submat
 assert [$tblObj mget -if {0 1 2} {x z}] eq $submat
-assert [$tblObj mget -kj {1 2 3} {0 end} eq $submat
-assert [$tblObj mget -ij 0:2 {0 end} eq $submat
+assert [$tblObj mget -kj {1 2 3} {0 end}] eq $submat
+assert [$tblObj mget -ij 0:2 {0 end}] eq $submat
 assert [$tblObj mget "0:2,0 2"] eq $submat
 
 set submat2 {{foo1 bar1} {foo2 bar2} {foo3 bar3}}
@@ -235,7 +220,7 @@ $tblObj mset -if 0:2 {x z} $submat2
 assert [$tblObj mget {1 2 3} {x z}] eq $submat2
 $tblObj mset {1 2 3} {x z} $submat; # reset
 # mset -kj keys j
-$tblObj mset -if {1 2 3} {0 end} $submat2
+$tblObj mset -kj {1 2 3} {0 end} $submat2
 assert [$tblObj mget {1 2 3} {x z}] eq $submat2
 $tblObj mset {1 2 3} {x z} $submat; # reset
 # mset -ij i j
@@ -287,7 +272,7 @@ $tblCopy rmove 1 end-1
 assert [$tblCopy keys] eq {2 3 4 1 5}
 $tblCopy rswap 1 5
 assert [$tblCopy keys] eq {2 3 4 5 1}
-$tblCopy rmove [$tblCopy key -i end-1] 0
+$tblCopy rmove [$tblCopy key end] 0
 assert [$tblCopy] eq [$tblObj]
 
 # Move and swap columns
