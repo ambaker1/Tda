@@ -76,8 +76,11 @@ $tblObj define data {
 The method \methodlink[0]{tbl}{properties} simply returns a dictionary of the table properties, as defined with \methodlink{tbl}{define}.
 Additionally, calling the table object without any arguments will return the table properties.
 \begin{syntax}
-\method{tbl}{properties}
+\method{tbl}{properties} <\$option>
 \end{syntax}
+\begin{args}
+\$option & Property to get: ``keyname'', ``fieldname'', ``keys'', ``fields'' or ``data''. 
+\end{args}
 \begin{example}{Getting table properties (and trimming a table)}
 \begin{lstlisting}
 puts [$tblObj properties]; # Automatically generates keys and fields
@@ -99,27 +102,44 @@ The keyname and fieldname properties of a table can be accessed directly with th
 \method{tbl}{keyname}
 \end{syntax}
 \begin{syntax}
-\method{tbl}{fieldname} 
+\method{tbl}{fieldname}
 \end{syntax}
+
+\clearpage
 \subsection{Get Keys and Fields}
 The table keys and fields are ordered lists of the row and column names of the table. They can be queried with the methods \methodlink[0]{tbl}{keys} and \methodlink[0]{tbl}{fields}, respectively. In addition to just returning the lists of keys and fields, a pattern can be specified in the same style as the Tcl  \textit{string match} command.
 \begin{syntax}
-\method{tbl}{keys} <\$pattern>
+\method{tbl}{keys} <\$i> <\$pattern>
 \end{syntax}
 \begin{syntax}
-\method{tbl}{fields} <\$pattern>
+\method{tbl}{fields} <\$j> <\$pattern>
 \end{syntax}
 \begin{args}
-\$pattern & String matching pattern. Default returns all
+\$pattern & String matching pattern. Default ``\texttt{*}'' returns all. \\
+\$i/\$j & Index arguments, using index notation explained on page \pageref{indexformat}. \\
+& Default ``\texttt{:}`` for all keys/fields. Does not allow ``\texttt{*}'' index notation.
 \end{args}
+
+\begin{example}{Accessing table keys}
+\begin{lstlisting}
+puts [$tblObj keys]
+puts [$tblObj keys 0:end-1]
+\end{lstlisting}
+\tcblower
+\begin{lstlisting}
+1 2 3 4 5
+1 2 3 4
+\end{lstlisting}
+\end{example}
 \clearpage
 \subsection{Get Table Data (Dictionary Form)}
 The method \methodlink[0]{tbl}{data} returns the table data in unsorted dictionary form, where blanks are represented by missing dictionary entries. 
 \begin{syntax}
-\method{tbl}{data} <\$key>
+\method{tbl}{data} <{}<-k> \$key> <-i \$i>
 \end{syntax}
 \begin{args}
-\$key & Key to get row dictionary from (default returns all rows).
+\$key & Key to get row dictionary from (default returns all rows). \\
+\$i & Row index to get row dictionary from (mutually exclusive with \texttt{\$key})
 \end{args}
 
 \begin{example}{Getting table data}
@@ -206,27 +226,17 @@ If the key or field does not exist, returns -1.
 
 \clearpage
 \subsection{Get Table Key/Field}
-The table key or field corresponding with a row or column index (\texttt{end-\textit{integer}} format supported) can be queried with the methods \methodlink[0]{tbl}{key} and \methodlink[0]{tbl}{field}. 
+The table key or field corresponding with a row or column index, parsed with \cmdlink{::tda::ndlist::Index2Integer}, can be queried with the methods \methodlink[0]{tbl}{key} and \methodlink[0]{tbl}{field}. 
 \begin{syntax}
-\method{tbl}{key} \$rid
+\method{tbl}{key} \$i
 \end{syntax}
 \begin{syntax}
-\method{tbl}{field} \$cid
-\end{syntax}
-\begin{args}
-\$rid & Row index. \\
-\$cid & Column index.
-\end{args}
-\subsection{Table Indexing}
-Table values, keys, fields, and keyname, and fieldname can be accessed with the method \methodlink[0]{tbl}{index}. Using ``-1'' for both \texttt{\$rid} and \texttt{\$cid} will return ``keyname\textbackslash fieldname''.
-\begin{syntax}
-\method{tbl}{index} \$rid \$cid
+\method{tbl}{field} \$j
 \end{syntax}
 \begin{args}
-\$rid & Row index. To access field row, use ``-1''. \\
-\$cid & Column index. To access key column, use ``-1''.
+\$i & Row index. \\
+\$j & Column index.
 \end{args}
-
 \clearpage
 \section{Table Entry and Access}
 Data entry and access to a table object can be done with single values with the methods \methodlink[0]{tbl}{set} and \methodlink[0]{tbl}{get}, entire rows with \methodlink[0]{tbl}{rset} and \methodlink[0]{tbl}{rget}, entire columns with \methodlink[0]{tbl}{cset} and \methodlink[0]{tbl}{cget}, or in matrix fashion with \methodlink[0]{tbl}{mset} and \methodlink[0]{tbl}{mget}. 
@@ -234,18 +244,87 @@ If entry keys/fields do not exist, they are added to the table.
 Additionally, since blank values represent missing data, setting a value to blank effectively unsets the table entry, but does not remove the key or field. 
 \subsection{Single Value Entry and Access}
 The methods \methodlink[0]{tbl}{set} and \methodlink[0]{tbl}{get} allow for easy entry and access of single values in the table. 
+Row and column indices are parsed with the \cmdlink{::tda::ndlist::Index2Integer} parser.
 Note that multiple field-value pairings can be used in \methodlink{tbl}{set}. 
+The default entry method is \texttt{-kf}, for key-field pairs, but other options are available as well.
 \begin{syntax}
-\method{tbl}{set} \$key \$field \$value ...
+\method{tbl}{set} <-kf> \$key \$field \$value ... \\
+\$tblObj set -kj \$key \$j \$value ... \\
+\$tblObj set -if \$i \$field \$value ... \\
+\$tblObj set -ij \$i \$j \$value ... \\
+\$tblObj set \$i,\$j \$value ...
 \end{syntax}
 \begin{syntax}
-\method{tbl}{get} \$key \$field
+\method{tbl}{get} <-kf> \$key \$field \\
+\$tblObj get -kj \$key \$j \\
+\$tblObj get -if \$i \$field \\
+\$tblObj get -ij \$i \$j \\
+\$tblObj get \$i,\$j
 \end{syntax}
 \begin{args}
 \$key & Key of row to set/get data in/from. \\
 \$field & Field of column to set/get data in/from. \\
+\$i & Row index. \\
+\$j & Column index. \\
 \$value & Value to set. 
 \end{args}
+\clearpage
+\subsection{Row Entry and Access}
+The methods \methodlink[0]{tbl}{rset} and \methodlink[0]{tbl}{rget} allow for easy row entry and access.
+Entry list length must match table width or be scalar.
+If entry list is blank, it will delete the row, but not the key.
+\begin{syntax}
+\method{tbl}{rset} <-k> \$key \$row \\
+\$tblObj rset -i \$i \$row
+\end{syntax}
+\begin{syntax}
+\method{tbl}{rget} <-k> \$key \\
+\$tblObj rget -i \$i
+\end{syntax}
+\begin{args}
+\$key & Key of row to set/get. \\
+\$i & Row index, parsed by \cmdlink{::tda::ndlist::Index2Integer}. \\
+\$row & List of values (or scalar) to set. 
+\end{args}
+\subsection{Column Entry and Access}
+The methods \methodlink[0]{tbl}{cset} and \methodlink[0]{tbl}{cget} allow for easy column entry and access.
+Entry list length must match table height or be scalar.
+If entry list is blank, it will delete the column, but not the field.
+\begin{syntax}
+\method{tbl}{cset} <-f> \$field \$column \\
+\$tblObj cset -j \$j \$column
+\end{syntax}
+\begin{syntax}
+\method{tbl}{cget} <-f> \$field \\
+\$tblObj cget -j \$j
+\end{syntax}
+\begin{args}
+\$field & Field of column to set/get. \\
+\$j & Column index, parsed by \cmdlink{::tda::ndlist::Index2Integer}. \\
+\$column & List of values (or scalar) to set. 
+\end{args}
+\clearpage
+\subsection{Matrix Entry and Access}
+The methods \methodlink[0]{tbl}{mset} and \methodlink[0]{tbl}{mget} allow for easy matrix-style entry and access.
+Entry matrix size must match table size or be scalar.
+Row and column indices are parsed by \cmdlink{::tda::ndlist::ParseIndex}.
+Note that \methodlink{tbl}{mget} with no arguments is identical to \methodlink{tbl}{values}.
+\begin{syntax}
+\method{tbl}{mset} <{}<-kf> \$keys \$fields> \$matrix \\
+\$tblObj mset -kj \$keys \$j \$matrix \\
+\$tblObj mset -if \$i \$fields \$matrix \\
+\$tblObj mset -ij \$i \$j \$matrix \\
+\$tblObj mset \$i,\$j \$matrix
+\end{syntax}
+\begin{syntax}
+\method{tbl}{mget} <\$keys \$fields>
+\end{syntax}
+\begin{args}
+\$keys & List of keys to set/get (default all keys). \\
+\$fields & List of keys to set/get (default all keys). \\
+\$matrix & Matrix of values (or scalar) to set.
+\end{args}
+
 \begin{example}{Setting multiple values}
 \begin{lstlisting}
 $tblObj set 1 x 2.00 y 5.00 foo bar
@@ -256,48 +335,6 @@ puts [$tblObj data 1]
 x 2.00 y 5.00 z 8.67 foo bar
 \end{lstlisting}
 \end{example}
-\clearpage
-\subsection{Row Entry and Access}
-The methods \methodlink[0]{tbl}{rset} and \methodlink[0]{tbl}{rget} allow for easy row entry and access.
-Entry list length must match table width or be scalar.
-\begin{syntax}
-\method{tbl}{rset} \$key \$row
-\end{syntax}
-\begin{syntax}
-\method{tbl}{rget} \$key
-\end{syntax}
-\begin{args}
-\$key & Key of row to set/get. \\
-\$row & List of values (or scalar) to set. 
-\end{args}
-\subsection{Column Entry and Access}
-The methods \methodlink[0]{tbl}{cset} and \methodlink[0]{tbl}{cget} allow for easy column entry and access.
-Entry list length must match table height or be scalar.
-\begin{syntax}
-\method{tbl}{cset} \$field \$column
-\end{syntax}
-\begin{syntax}
-\method{tbl}{cget} \$field
-\end{syntax}
-\begin{args}
-\$field & Field of column to set/get. \\
-\$column & List of values (or scalar) to set. 
-\end{args}
-\subsection{Matrix Entry and Access}
-The methods \methodlink[0]{tbl}{mset} and \methodlink[0]{tbl}{mget} allow for easy matrix-style entry and access.
-Entry matrix size must match table size or be scalar.
-Note that \methodlink{tbl}{mget} with no arguments is identical to \methodlink{tbl}{values}.
-\begin{syntax}
-\method{tbl}{mset} <\$keys \$fields> \$matrix
-\end{syntax}
-\begin{syntax}
-\method{tbl}{mget} <\$keys \$fields>
-\end{syntax}
-\begin{args}
-\$keys & List of keys to set/get (default all keys). \\
-\$fields & List of keys to set/get (default all keys). \\
-\$matrix & Matrix of values (or scalar) to set.
-\end{args}
 
 \clearpage
 
