@@ -43,15 +43,14 @@ assert [$tblObj j z] == 2
 assert [$tblObj find key 1] eq [$tblObj i 1]
 assert [$tblObj find field x] eq [$tblObj j x]
 
-
 # keys
 # fields
 assert [$tblObj keys] eq {1 2 3 4 5}
-assert [$tblObj keys -i 0:2] eq {1 2 3}
+assert [$tblObj keys 0:2] eq {1 2 3}
 assert [$tblObj fields] eq {x y z}
-assert [$tblObj fields -j 0:1] eq {x y}
-assert [$tblObj fields -j end] eq {z}
-assert [$tblObj fields {[x-y]}] eq {x y}
+assert [$tblObj fields 0:1] eq {x y}
+assert [$tblObj fields end] eq {z}
+assert [$tblObj fields : {[x-y]}] eq {x y}
 
 # rename keys
 tie tblCopy [$tblObj copy]
@@ -59,18 +58,18 @@ $tblCopy rename keys [lmap key [$tblCopy keys] {string cat K $key}]
 assert [$tblCopy keys] eq {K1 K2 K3 K4 K5}
 
 tie tblCopy [$tblObj copy]
-$tblCopy rename keys [$tblCopy keys -i 0:2] {K1 K2 K3}
+$tblCopy rename keys [$tblCopy keys 0:2] {K1 K2 K3}
 assert [$tblCopy keys] eq {K1 K2 K3 4 5}
-assert [$tblCopy keys K*] eq {K1 K2 K3}
+assert [$tblCopy keys : K*] eq {K1 K2 K3}
 
 # rename fields
 tie tblCopy [$tblObj copy]
 $tblCopy rename fields {a b c}; # Renames all fields
 $tblCopy rename fields {c a} {C A}; # Selected fields
 assert [$tblCopy fields] eq {A b C}
-assert [$tblCopy fields {[A-Z]}] eq {A C}
+assert [$tblCopy fields : {[A-Z]}] eq {A C}
 
-# mkkey (no data loss)
+# mkkey
 # remove fields
 tie tblCopy [$tblObj copy]
 $tblCopy fedit record_ID {[string cat R @key]}
@@ -79,7 +78,7 @@ $tblCopy remove fields key
 assert [$tblCopy keys] eq {R1 R2 R3 R4 R5}
 assert [$tblCopy fields] eq {x y z}
 assert [$tblCopy values] eq [$tblObj values]
-$tblCopy remove keys {*}[$tblCopy keys -i 1:end-1]
+$tblCopy remove keys {*}[$tblCopy keys 1:end-1]
 assert [$tblCopy keys] eq {R1 R5}
 
 # clear, clean, and wipe
@@ -105,9 +104,9 @@ assert [$tblObj exists key 6] == 0
 assert [$tblObj exists field y]
 assert [$tblObj exists field foo] == 0
 assert [$tblObj exists value 3 y]
-$tblObj set 3 y ""
-assert [$tblObj exists value 3 y] == 0
-$tblObj set 3 y 7.56; # reset
+tie tblCopy [$tblObj copy]
+$tblCopy set 3 y ""
+assert [$tblCopy exists value 3 y] == 0
 
 # get
 assert [$tblObj get 2 x] == 4.61
@@ -126,29 +125,30 @@ assert [catch {$tblObj get end+1,0}]; # Should throw an error (out of range)
 assert [$tblObj index -1 -1] eq [$tblObj get -1,-1]; # DEPRECIATED
 
 # set key field
-$tblObj set 2 x foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+tie tblCopy [$tblObj copy]
+$tblCopy set 2 x foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 # set -kf key field
-$tblObj set -kf 2 x foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+$tblCopy set -kf 2 x foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 # set -kj key j
-$tblObj set -kj 2 0 foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+$tblCopy set -kj 2 0 foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 # set -if i field
-$tblObj set -if 1 x foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+$tblCopy set -if 1 x foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 # set -ij i j
-$tblObj set -ij 1 0 foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+$tblCopy set -ij 1 0 foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 # set i,j
-$tblObj set 1,0 foo
-assert [$tblObj get 2 x] == foo
-$tblObj set 2 x 4.61
+$tblCopy set 1,0 foo
+assert [$tblCopy get 2 x] == foo
+$tblCopy set 2 x 4.61
 
 # rget
 assert [$tblObj rget 2] eq {4.61 1.81 7.63}
@@ -156,44 +156,46 @@ assert [$tblObj rget -i 1] eq {4.61 1.81 7.63}
 assert [$tblObj rget -i end] eq {3.26 9.92 4.56}
 
 # rset key
-$tblObj rset 2 {foo bar foo}
-assert [$tblObj rget 2] eq {foo bar foo}
-$tblObj rset 2 {4.61 1.81 7.63}
+tie tblCopy [$tblObj copy]
+$tblCopy rset 2 {foo bar foo}
+assert [$tblCopy rget 2] eq {foo bar foo}
+$tblCopy rset 2 {4.61 1.81 7.63}
 # rset -i i
-$tblObj rset -i 1 {foo bar foo}
-assert [$tblObj rget 2] eq {foo bar foo}
-$tblObj rset 2 {4.61 1.81 7.63}
+$tblCopy rset -i 1 {foo bar foo}
+assert [$tblCopy rget 2] eq {foo bar foo}
+$tblCopy rset 2 {4.61 1.81 7.63}
 # Delete row
-$tblObj rset 2 ""
-assert [$tblObj rget 2] eq {{} {} {}}
-assert [$tblObj exists value 2 x] == 0
-$tblObj rset 2 {4.61 1.81 7.63}
+$tblCopy rset 2 ""
+assert [$tblCopy rget 2] eq {{} {} {}}
+assert [$tblCopy exists value 2 x] == 0
+$tblCopy rset 2 {4.61 1.81 7.63}
 # Set row to scalar
-$tblObj rset 2 foo
-assert [$tblObj rget 2] eq {foo foo foo}
-$tblObj rset 2 {4.61 1.81 7.63}
+$tblCopy rset 2 foo
+assert [$tblCopy rget 2] eq {foo foo foo}
+$tblCopy rset 2 {4.61 1.81 7.63}
 
 # cget
 assert [$tblObj cget x] eq {3.44 4.61 8.25 5.20 3.26}
 assert [$tblObj cget -j 0] eq {3.44 4.61 8.25 5.20 3.26}
 
 # cset field
-$tblObj cset x {foo bar foo bar foo}
-assert [$tblObj cget x] eq {foo bar foo bar foo}
-$tblObj cset x {3.44 4.61 8.25 5.20 3.26}
+tie tblCopy [$tblObj copy]
+$tblCopy cset x {foo bar foo bar foo}
+assert [$tblCopy cget x] eq {foo bar foo bar foo}
+$tblCopy cset x {3.44 4.61 8.25 5.20 3.26}
 # cset -j j
-$tblObj cset -j 0 {foo bar foo bar foo}
-assert [$tblObj cget x] eq {foo bar foo bar foo}
-$tblObj cset x {3.44 4.61 8.25 5.20 3.26}
-# Delete row
-$tblObj cset x ""
-assert [$tblObj cget x] eq {{} {} {} {} {}}
-assert [$tblObj exists value 2 x] == 0
-$tblObj cset x {3.44 4.61 8.25 5.20 3.26}
+$tblCopy cset -j 0 {foo bar foo bar foo}
+assert [$tblCopy cget x] eq {foo bar foo bar foo}
+$tblCopy cset x {3.44 4.61 8.25 5.20 3.26}
+# Delete column
+$tblCopy cset x ""
+assert [$tblCopy cget x] eq {{} {} {} {} {}}
+assert [$tblCopy exists value 2 x] == 0
+$tblCopy cset x {3.44 4.61 8.25 5.20 3.26}
 # Set row to scalar
-$tblObj cset x foo
-assert [$tblObj cget x] eq {foo foo foo foo foo}
-$tblObj cset x {3.44 4.61 8.25 5.20 3.26}
+$tblCopy cset x foo
+assert [$tblCopy cget x] eq {foo foo foo foo foo}
+$tblCopy cset x {3.44 4.61 8.25 5.20 3.26}
 
 # mget
 assert [$tblObj values] eq [$tblObj mget]
@@ -208,29 +210,30 @@ assert [$tblObj mget "0:2,0 2"] eq $submat
 
 set submat2 {{foo1 bar1} {foo2 bar2} {foo3 bar3}}
 # mset keys fields
-$tblObj mset {1 2 3} {x z} $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+tie tblCopy [$tblObj copy]
+$tblCopy mset {1 2 3} {x z} $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 # mset -kf keys fields
-$tblObj mset -kf {1 2 3} {x z} $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+$tblCopy mset -kf {1 2 3} {x z} $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 # mset -if i fields
-$tblObj mset -if 0:2 {x z} $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+$tblCopy mset -if 0:2 {x z} $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 # mset -kj keys j
-$tblObj mset -kj {1 2 3} {0 end} $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+$tblCopy mset -kj {1 2 3} {0 end} $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 # mset -ij i j
-$tblObj mset -ij 0:2 {0 end} $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+$tblCopy mset -ij 0:2 {0 end} $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 # mset i,j
-$tblObj mset 0:2,[list 0 2] $submat2
-assert [$tblObj mget {1 2 3} {x z}] eq $submat2
-$tblObj mset {1 2 3} {x z} $submat; # reset
+$tblCopy mset 0:2,[list 0 2] $submat2
+assert [$tblCopy mget {1 2 3} {x z}] eq $submat2
+$tblCopy mset {1 2 3} {x z} $submat; # reset
 
 # shape
 assert [$tblObj shape] eq {5 3}
@@ -323,7 +326,7 @@ assert [$tblCopy keys] == 3; # returns first matching key
 # Merging tables
 tie newTable [tbl new data {1 {x 5.00 q 6.34}}]
 tie tblCopy [$tblObj copy]
-# $newTable set 1 x 5.00 q 6.34
+$newTable set 1 x 5.00 q 6.34
 $tblCopy merge $newTable
 $newTable destroy; # clean up
 assert [$tblCopy properties] eq {keyname key fieldname field keys {1 2 3 4 5} fields {x y z q} data {1 {x 5.00 y 7.11 z 8.67 q 6.34} 2 {x 4.61 y 1.81 z 7.63} 3 {x 8.25 y 7.56 z 3.84} 4 {x 5.20 y 6.78 z 1.11} 5 {x 3.26 y 9.92 z 4.56}}}
