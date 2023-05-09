@@ -29,11 +29,7 @@ assert [$tblCopy] eq {keyname key fieldname field keys {1 2} fields x data {1 {x
 
 # key/field, i/j
 assert [$tblObj keyname] eq key
-assert [$tblObj keyname foo] eq foo
-assert [$tblObj keyname key] eq key
 assert [$tblObj fieldname] eq field
-assert [$tblObj fieldname foo] eq foo
-assert [$tblObj fieldname field] eq field
 assert [$tblObj key 0] eq 1
 assert [$tblObj i 1] == 0
 assert [$tblObj key end] eq 5

@@ -823,7 +823,8 @@ method mset {args} {
         set fieldset $fields
     } elseif {[llength $args] == 2} {
         # i,j notation
-        set ij [split [lindex $args 0] ,]
+        lassign $args ij matrix
+        set ij [split $ij ,]
         if {[llength $ij] != 2} {
             ::errmsg::wrongNumArgs "[self] mset i,j matrix"
         }
@@ -1116,6 +1117,9 @@ method cget {args} {
 # j:            Column indices
 
 method mget {args} {
+    # Initialize whether to flatten along row and column dimensions
+    set flattenRows 0
+    set flattenColumns 0
     # Check arity
     if {[llength $args] == 0} {
         # All keys and fields
