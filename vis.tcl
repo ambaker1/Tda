@@ -9,7 +9,7 @@
 # redistribution, and for a DISCLAIMER OF ALL WARRANTIES.
 ################################################################################
 
-package require wob 0.1
+package require wob 1.0
 package require tda::ndlist 0.1
 package require tda::tbl 0.1
 package require tda::io 0.1
@@ -457,4 +457,4 @@ namespace eval ::tda {
 }
 
 # Finally, provide the package
-package provide tda::vis 0.1.1
+package provide tda::vis 0.1.2
